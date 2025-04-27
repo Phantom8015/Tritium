@@ -48,7 +48,6 @@
 
       .tab {
         padding: 0 5px;
-        border-radius: 20px;
         height: 100%;
         display: flex;
         align-items: center;
@@ -168,8 +167,6 @@
       .script-item.searched-script {
         background-size: cover;
         background-position: center;
-        position: relative;
-        overflow: hidden;
       }
 
       .script-item.searched-script::before {
@@ -528,6 +525,85 @@
       .log-entry.show {
         opacity: 1;
       }
+
+      .sidebar-category {
+        padding: 10px 15px;
+        font-weight: bold;
+        color: #569CD6;
+        border-bottom: 1px solid #333;
+        background-color: #1e1e1e;
+      }
+
+      .rename-dialog {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .rename-content {
+        background-color: #252526;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        width: 400px;
+        max-width: 90%;
+      }
+      
+      .rename-content h2 {
+        margin-top: 0;
+        color: #569CD6;
+        text-align: center;
+      }
+      
+      .rename-content input {
+        width: 100%;
+        padding: 10px;
+        margin: 15px 0;
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        color: #d4d4d4;
+        font-family: 'Fira Code', monospace;
+        box-sizing: border-box;
+      }
+      
+      .rename-content input:focus {
+        border-color: #569CD6;
+        outline: none;
+      }
+      
+      .rename-buttons {
+        display: flex;
+        justify-content: space-between;
+      }
+      
+      .rename-buttons button {
+        padding: 8px 15px;
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        color: #d4d4d4;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      
+      .rename-buttons button:hover {
+        background-color: #333;
+      }
+      
+      #confirmRename {
+        background-color: #569CD6;
+        color: white;
+      }
+      
+      #confirmRename:hover {
+        background-color: #4b87c0;
+      }
     </style>
   </head>
   <body>
@@ -554,6 +630,88 @@
       <div class="context-menu-separator"></div>
       <div class="context-menu-item" id="autoExecuteScript">Autoexecute <span class="context-menu-checkbox" id="autoExecuteCheckbox">✓</span></div>
     </div>
+    <div class="rename-dialog" id="renameDialog">
+      <div class="rename-content">
+        <h2>Rename before saving</h2>
+        <input type="text" id="renameInput" placeholder="Enter script name" />
+        <div class="rename-buttons">
+          <button id="confirmRename">Save</button>
+          <button id="cancelRename">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      .rename-dialog {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .rename-content {
+        background-color: #252526;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        width: 400px;
+        max-width: 90%;
+      }
+      
+      .rename-content h2 {
+        margin-top: 0;
+        color: #569CD6;
+        text-align: center;
+      }
+      
+      .rename-content input {
+        width: 100%;
+        padding: 10px;
+        margin: 15px 0;
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        color: #d4d4d4;
+        font-family: 'Fira Code', monospace;
+        box-sizing: border-box;
+      }
+      
+      .rename-content input:focus {
+        border-color: #569CD6;
+        outline: none;
+      }
+      
+      .rename-buttons {
+        display: flex;
+        justify-content: space-between;
+      }
+      
+      .rename-buttons button {
+        padding: 8px 15px;
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        color: #d4d4d4;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      
+      .rename-buttons button:hover {
+        background-color: #333;
+      }
+      
+      #confirmRename {
+        background-color: #569CD6;
+        color: white;
+      }
+      
+      #confirmRename:hover {
+        background-color: #4b87c0;
+      }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/lua/lua.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/edit/matchbrackets.min.js"></script>
@@ -597,6 +755,17 @@
       let logWatcher = null;
       let lastLogLine = null;
       let logFilePath = null;
+      let trendingLoaded = false;
+      let currentSearchId = 0;
+      let trendingScripts = [];
+
+      
+      const scriptsDirectory = path.join(require('os').homedir(), 'Documents', 'Tritium');
+
+      
+      if (!fs.existsSync(scriptsDirectory)) {
+          fs.mkdirSync(scriptsDirectory, { recursive: true });
+      }
 
       function makeWindowDraggable() {
         if (!isElectron || !ipcRenderer) return;
@@ -727,14 +896,26 @@
       }
       
       function loadSavedScripts() {
+        savedScripts = [];
         try {
-          const scripts = localStorage.getItem('savedScripts');
-          if (scripts) {
-            savedScripts = JSON.parse(scripts);
+          if (fs.existsSync(scriptsDirectory)) {
+            const files = fs.readdirSync(scriptsDirectory);
+            files.forEach(file => {
+              if (file.endsWith('.txt')) {
+                const filePath = path.join(scriptsDirectory, file);
+                const content = fs.readFileSync(filePath, 'utf8');
+                let scriptName = file.replace('.txt', '');
+                scriptName = scriptName.split('.')[0];
+                savedScripts.push({
+                  title: scriptName,
+                  script: content
+                });
+              }
+            });
           }
         } catch (err) {
           console.error("Error loading saved scripts:", err);
-          savedScripts = [];
+          addLog("Error loading saved scripts: " + err.message, "error");
         }
       }
       
@@ -780,7 +961,7 @@
         }
         saveAutoExecuteScripts(autoExecScripts);
         updateAutoExecuteCheckbox(scriptName);
-        renderSavedScripts();
+        renderSidebar();
       }
       
       function updateAutoExecuteCheckbox(scriptName) {
@@ -844,6 +1025,10 @@
               }
               
               persistSavedScripts();
+              const filePath = path.join(scriptsDirectory, `${originalName}.txt`);
+              const newFilePath = path.join(scriptsDirectory, `${newName}.txt`);
+              fs.renameSync(filePath, newFilePath);
+              
               showToast(`Script renamed to "${newName}"`);
             }
           }
@@ -879,16 +1064,29 @@
             if (isAutoExecuteScript(currentContextScript)) {
               toggleAutoExecuteScript(currentContextScript);
             }
-            savedScripts.splice(scriptIndex, 1);
-            persistSavedScripts();
-            renderSavedScripts();
-            showToast(`Script "${currentContextScript}" deleted`);
+            
+            
+            const filePath = path.join(scriptsDirectory, `${currentContextScript}.txt`);
+            try {
+              fs.unlinkSync(filePath);
+              savedScripts.splice(scriptIndex, 1);
+              persistSavedScripts();
+              renderSidebar();
+              showToast(`Script "${currentContextScript}" deleted`);
+            } catch (err) {
+              showToast(`Error deleting script: ${err.message}`, true);
+              console.error("Error deleting script file:", err);
+            }
           }
         }
       });
       autoExecuteScriptBtn.addEventListener('click', () => {
         if (!currentContextScript) return;
         toggleAutoExecuteScript(currentContextScript);
+        
+        if (sidebar.classList.contains('open')) {
+          renderSidebar();
+        }
       });
 
       function createTab(name = "Untitled.lua", content = "-- New script") {
@@ -977,22 +1175,45 @@
         }
         const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
         if (!tab) return;
-        const scriptName = tab.dataset.name;
+        let scriptName = tab.dataset.name;
+
+        if (scriptName === "Untitled.lua") {
+          const renameDialog = document.getElementById('renameDialog');
+          renameDialog.style.display = 'flex';
+          const renameInput = document.getElementById('renameInput');
+          renameInput.value = '';
+          renameInput.focus();
+          return;
+        }
+        scriptName = scriptName.split('.')[0];
+        saveScriptContent(tab, scriptName);
+      }
+
+      function saveScriptContent(tab, scriptName) {
         const scriptContent = editors[currentTab].getValue();
-        const existingIndex = savedScripts.findIndex(s => s.title === scriptName);
-        if (existingIndex !== -1) {
-          savedScripts[existingIndex].script = scriptContent;
-        } else {
-          savedScripts.push({
-            title: scriptName,
-            script: scriptContent
-          });
-        }
-        persistSavedScripts();
-        showToast(`Script "${scriptName}" saved successfully!`);
-        if (!searchBox.value) {
-          renderSavedScripts();
-        }
+        const filePath = path.join(scriptsDirectory, `${scriptName}.txt`);
+
+        fs.writeFile(filePath, scriptContent, (err) => {
+          if (err) {
+            showToast("Error saving script: " + err.message, true);
+            return;
+          }
+          showToast(`Script "${scriptName}" saved successfully!`);
+          
+          
+          const tabNameElement = tab.querySelector('span');
+          if (tabNameElement) {
+            tabNameElement.textContent = scriptName;
+          }
+          
+          
+          loadSavedScripts();
+          
+          
+          if (sidebar.classList.contains('open') && !searchBox.value) {
+            renderSidebar();
+          }
+        });
       }
 
       function renderSavedScripts() {
@@ -1121,164 +1342,336 @@
       async function loadTrending() {
         updateStatus("Loading trending scripts...");
         try {
-          const res = await fetch('https://scriptblox.com/api/script/trending?max=20');
+          const res = await fetch('https://scriptblox.com/api/script/trending?max=30');
           const data = await res.json();
-          renderScripts(data.result.scripts.filter(s => s.script));
+          
+          if (data.result && data.result.scripts) {
+            
+            const loadingItem = document.createElement('div');
+            loadingItem.className = 'script-item';
+            loadingItem.textContent = 'Loading scripts...';
+            scriptsList.appendChild(loadingItem);
+            
+            // Store the trending scripts data
+            trendingScripts = data.result.scripts;
+            
+            const batchSize = 3;
+            const scripts = data.result.scripts;
+            
+            for (let i = 0; i < scripts.length; i += batchSize) {
+              const batch = scripts.slice(i, i + batchSize);
+              
+              
+              loadingItem.textContent = `Loading scripts... (${i}/${scripts.length})`;
+              
+              
+              await Promise.all(batch.map(async (script) => {
+                try {
+                  
+                  if (!script.script && script._id) {
+                    try {
+                      const scriptContent = await fetchScriptContent(script._id);
+                      if (scriptContent) {
+                        script.script = scriptContent;
+                      }
+                    } catch (err) {
+                      console.error(`Failed to load script ${script.title}:`, err);
+                      script.script = `-- Error loading script: ${script.title}\n-- ${err.message}`;
+                    }
+                  }
+                  
+                  
+                  const item = document.createElement('div');
+                  item.className = 'script-item searched-script';
+                  
+                  if (script.image) {
+                      item.style.backgroundImage = `url('${script.image}')`;
+                  } else if (script.game && script.game.imageUrl) {
+                      item.style.backgroundImage = `url('${script.game.imageUrl}')`;
+                  }
+                  
+                  const content = document.createElement('div');
+                  content.className = 'script-content';
+                  
+                  const title = document.createElement('div');
+                  title.className = 'script-title';
+                  title.innerText = script.title;
+                  content.appendChild(title);
+                  
+                  if (script.game && script.game.name) {
+                      const game = document.createElement('div');
+                      game.className = 'script-game';
+                      game.innerText = `${script.game.name}`;
+                      content.appendChild(game);
+                  }
+                  
+                  const meta = document.createElement('div');
+                  meta.className = 'script-meta';
+                  
+                  if (script.verified) {
+                      const verified = document.createElement('span');
+                      verified.className = 'script-verified';
+                      verified.innerText = '✔ Verified';
+                      meta.appendChild(verified);
+                  }
+                  
+                  if (script.isPatched) {
+                      const patched = document.createElement('span');
+                      patched.className = 'script-patched';
+                      patched.innerText = '⚠ Patched';
+                      meta.appendChild(patched);
+                  }
+                  
+                  if (script.isUniversal) {
+                      const universal = document.createElement('span');
+                      universal.className = 'script-universal';
+                      universal.innerText = '🌐 Universal';
+                      meta.appendChild(universal);
+                  }
+                  
+                  if (script.key) {
+                      const key = document.createElement('span');
+                      key.className = 'script-key';
+                      key.innerText = '🔑 Key Required';
+                      meta.appendChild(key);
+                  }
+                  
+                  content.appendChild(meta);
+                  item.appendChild(content);
+                  
+                  
+                  item.onclick = () => {
+                      createTab(script.title + ".txt", script.script);
+                  };
+                  
+                  scriptsList.appendChild(item);
+                } catch (err) {
+                  console.error(`Error processing script ${script.title}:`, err);
+                }
+              }));
+            }
+            
+            
+            loadingItem.remove();
+            
+          } else {
+            const noTrending = document.createElement('div');
+            noTrending.className = 'script-item';
+            noTrending.textContent = 'No trending scripts available';
+            scriptsList.appendChild(noTrending);
+          }
+          
           updateStatus("Ready");
         } catch (err) {
           console.error("Error loading trending scripts:", err);
-          renderSavedScripts();
-          scriptsList.innerHTML += `<div class='script-item'>Infinite Yield</div>`;
-          const infiniteYield = scriptsList.lastChild;
-          infiniteYield.onclick = () => createTab("Infinite Yield.lua", 'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()');
+          
+          const noTrending = document.createElement('div');
+          noTrending.className = 'script-item';
+          noTrending.textContent = 'Error loading trending scripts';
+          scriptsList.appendChild(noTrending);
+          
+          const infiniteYield = document.createElement('div');
+          infiniteYield.className = 'script-item';
+          infiniteYield.textContent = 'Infinite Yield';
+          infiniteYield.onclick = () => createTab("Infinite Yield.txt", 'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()');
+          scriptsList.appendChild(infiniteYield);
+          
           updateStatus("Ready (using local scripts)");
         }
       }
-      async function searchScripts(query) {
-          if (query === "") {
-              renderSavedScripts();
-              return;
-          }
+
+      
+      async function fetchScriptContent(scriptId) {
+        try {
           
-          const localResults = savedScripts.filter(s => 
-              s.title.toLowerCase().includes(query.toLowerCase()) ||
-              (s.game && s.game.toLowerCase().includes(query.toLowerCase()))
-          );
-          
-          if (localResults.length > 0) {
-              renderScripts(localResults.map(s => ({
-                  title: s.title,
-                  game: { name: s.game || "Unknown Game" },
-                  script: s.script,
-                  verified: false,
-                  isPatched: false,
-                  isUniversal: false,
-                  key: false
-              })));
-              return;
-          }
-          
-          updateStatus("Searching...");
+          const directUrl = `https://scriptblox.com/raw/${scriptId}`;
           try {
-              const res = await fetch(`https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}`);
-              const data = await res.json();
-              
-              if (data.result && data.result.scripts) {
-                  renderScripts(data.result.scripts);
-              } else {
-                  scriptsList.innerHTML = "<div class='script-item'>No scripts found</div>";
+            const directRes = await fetch(directUrl);
+            if (directRes.ok) {
+              const content = await directRes.text();
+              if (content && content.length > 0 && !content.includes('<!DOCTYPE html>')) {
+                return content;
               }
-              updateStatus("Ready");
-          } catch (err) {
-              console.error("Error searching scripts:", err);
-              scriptsList.innerHTML = "<div class='script-item'>Error searching. Try again later.</div>";
-              updateStatus("Search failed", true);
-              setTimeout(() => updateStatus("Ready"), 3000);
+            }
+          } catch (directErr) {
+            console.log("Direct fetch failed:", directErr);
           }
+          
+          
+          const res = await fetch(`https://scriptblox.com/api/script/${scriptId}`);
+          const data = await res.json();
+          
+          if (data && data.script) {
+            return data.script;
+          }
+          
+          if (data && data.result) {
+            if (data.result.script) return data.result.script;
+            if (data.result.content) return data.result.content;
+          }
+          
+          
+          return `-- Script for ${scriptId} could not be loaded\nloadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()`;
+        } catch (err) {
+          console.error("Error fetching script content:", err);
+          return `-- Error fetching script: ${err.message}\nloadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()`;
+        }
       }
 
-      function renderScripts(scripts) {
+      searchBox.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (val.length === 0) {
+          renderSidebar();
+        } else if (val.length >= 2) {
+          searchScripts(val);
+        }
+      });
+
+      async function searchScripts(query) {
+        if (!query || query.length < 2) return;
+        
+        max=30
+        const thisSearchId = ++currentSearchId;
+        
         scriptsList.innerHTML = "";
         
-        if (!scripts || scripts.length === 0) {
-            scriptsList.innerHTML = "<div class='script-item'>No scripts found</div>";
-            return;
-        }
-
-        scripts.forEach(script => {
+        const searchHeader = document.createElement('div');
+        searchHeader.className = 'sidebar-category';
+        searchHeader.textContent = `Search Results: "${query}"`;
+        scriptsList.appendChild(searchHeader);
+        
+        let foundInSaved = false;
+        const lowerQuery = query.toLowerCase();
+        
+        savedScripts.forEach(script => {
+          if (script.title.toLowerCase().includes(lowerQuery) || 
+              (script.script && script.script.toLowerCase().includes(lowerQuery))) {
+            foundInSaved = true;
+            
             const item = document.createElement('div');
-            item.className = 'script-item searched-script';
-            
-            
-            if (script.image) {
-                item.style.backgroundImage = `url('${script.image}')`;
-            } else if (script.game && script.game.imageUrl) {
-                item.style.backgroundImage = `url('${script.game.imageUrl}')`;
-            }
+            item.className = 'script-item saved-script';
             
             const content = document.createElement('div');
             content.className = 'script-content';
             
             const title = document.createElement('div');
             title.className = 'script-title';
-            title.innerText = script.title;
+            title.textContent = script.title;
             content.appendChild(title);
             
-            if (script.game && script.game.name) {
-                const game = document.createElement('div');
-                game.className = 'script-game';
-                game.innerText = `${script.game.name}`;
-                content.appendChild(game);
-            }
-            
-            const meta = document.createElement('div');
-            meta.className = 'script-meta';
-            
-            if (script.verified) {
-                const verified = document.createElement('span');
-                verified.className = 'script-verified';
-                verified.innerText = '✔ Verified';
-                meta.appendChild(verified);
-            }
-            
-            if (script.isPatched) {
-                const patched = document.createElement('span');
-                patched.className = 'script-patched';
-                patched.innerText = '⚠ Patched';
-                meta.appendChild(patched);
-            }
-            
-            if (script.isUniversal) {
-                const universal = document.createElement('span');
-                universal.className = 'script-universal';
-                universal.innerText = '🌐 Universal';
-                meta.appendChild(universal);
-            }
-            
-            if (script.key) {
-                const key = document.createElement('span');
-                key.className = 'script-key';
-                key.innerText = '🔑 Key Required';
-                meta.appendChild(key);
-            }
-            
-            content.appendChild(meta);
             item.appendChild(content);
-            
-            item.onclick = () => {
-                if (script.script) {
-                    createTab(script.title + ".lua", script.script);
-                } else {
-                    fetchScriptContent(script._id).then(content => {
-                        if (content) {
-                            createTab(script.title + ".lua", content);
-                        } else {
-                            showToast("Couldn't load script content", true);
-                        }
-                    });
-                }
-            };
+            item.onclick = () => createTab(script.title, script.script);
+            item.oncontextmenu = (e) => showContextMenu(e, script.title);
             
             scriptsList.appendChild(item);
-        });
-    }
-      
-      async function fetchScriptContent(scriptId) {
-          try {
-              const res = await fetch(`https://scriptblox.com/api/script/${scriptId}`);
-              const data = await res.json();
-              return data.result.script;
-          } catch (err) {
-              console.error("Error fetching script content:", err);
-              return null;
           }
+        });
+        
+        if (!foundInSaved) {
+          const noResults = document.createElement('div');
+          noResults.className = 'script-item';
+          noResults.textContent = 'No matching scripts found in your saved scripts';
+          scriptsList.appendChild(noResults);
+        }
+        
+        const searchingIndicator = document.createElement('div');
+        searchingIndicator.className = 'sidebar-category';
+        searchingIndicator.textContent = 'Searching Online...';
+        scriptsList.appendChild(searchingIndicator);
+        
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          max=30
+          if (thisSearchId !== currentSearchId) {
+            console.log(`Search ${thisSearchId} abandoned, current is ${currentSearchId}`);
+            return; max=30
+          }
+
+          const searchUrl = `https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}&max=30`;
+          const response = await fetch(searchUrl);
+          const data = await response.json();
+          
+          max=30
+          if (thisSearchId !== currentSearchId) {
+            console.log(`Search ${thisSearchId} results abandoned, current is ${currentSearchId}`);
+            return; max=30
+          }
+          
+          searchingIndicator.textContent = 'Online Results';
+          console.log("Search response:", data);
+          
+          if (data && data.result && data.result.scripts && data.result.scripts.length > 0) {
+            let hasDisplayedScripts = false;
+            
+            for (const script of data.result.scripts) {
+              if (!script) continue;
+              
+              hasDisplayedScripts = true;
+              const item = document.createElement('div');
+              item.className = 'script-item searched-script';
+              
+              if (script.image) {
+                item.style.backgroundImage = `url('${script.image}')`;
+              } else if (script.game && script.game.imageUrl) {
+                item.style.backgroundImage = `url('${script.game.imageUrl}')`;
+              }
+              
+              const content = document.createElement('div');
+              content.className = 'script-content';
+              
+              const title = document.createElement('div');
+              title.className = 'script-title';
+              title.textContent = script.title || "Unnamed Script";
+              content.appendChild(title);
+              
+              if (script.game && script.game.name) {
+                const game = document.createElement('div');
+                game.className = 'script-game';
+                game.textContent = script.game.name;
+                content.appendChild(game);
+              }
+              
+              const meta = document.createElement('div');
+              meta.className = 'script-meta';
+              
+              item.appendChild(content);
+              setupTrendingScriptItem(item, script);
+              
+              scriptsList.appendChild(item);
+            }
+            
+            if (!hasDisplayedScripts) {
+              max=30
+              if (thisSearchId === currentSearchId) {
+                const noResults = document.createElement('div');
+                noResults.className = 'script-item';
+                noResults.textContent = 'No online scripts found';
+                scriptsList.appendChild(noResults);
+              }
+            }
+          } else {
+            max=30
+            if (thisSearchId === currentSearchId) {
+              const noResults = document.createElement('div');
+              noResults.className = 'script-item';
+              noResults.textContent = 'No online scripts found';
+              scriptsList.appendChild(noResults);
+            }
+          }
+        } catch (err) {
+          max=30
+          if (thisSearchId === currentSearchId) {
+            console.error("Error searching scripts:", err);
+            searchingIndicator.textContent = 'Online Results (Error)';
+            
+            const errorItem = document.createElement('div');
+            errorItem.className = 'script-item';
+            errorItem.textContent = `Error searching: ${err.message}`;
+            scriptsList.appendChild(errorItem);
+          }
+        }
       }
-      searchBox.addEventListener('input', (e) => {
-        const val = e.target.value;
-        if (val.length >= 2) searchScripts(val);
-        else if (val.length === 0) renderSavedScripts();
-        else loadTrending();
-      });
 
       function checkConnection() {
         if (!isElectron) {
@@ -1306,19 +1699,25 @@
         loadSavedScripts();
         makeWindowDraggable();
         startLogWatcher();
+        startFileWatcher();
+        
+        
+        sidebar.classList.add('open');
+        
+        
+        trendingLoaded = false;
+        renderSidebar();
+        
         let lastJoinLine = null;
         if (isElectron) {
           const logWorker = JoinWatcher();
           window.addEventListener('beforeunload', () => {
-            logWorker.terminate();
+            if (logWorker) logWorker.terminate();
+            if (fsWatcher) fsWatcher.close();
           });
         }
         createTab('startup.lua', 'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()');
-        if (savedScripts.length > 0) {
-          renderSavedScripts();
-        } else {
-          loadTrending();
-        }
+        
         updateStatus("Ready");
         if (isElectron && ipcRenderer) {
           ipcRenderer.on('portUpdate', (event, port) => {
@@ -1364,6 +1763,210 @@
               showToast("Executing: " + code.substring(0, 30) + "...");
             }
           });
+        }
+      }
+
+      function renderSidebar() {
+        scriptsList.innerHTML = "";
+        
+        
+        const savedCategory = document.createElement('div');
+        savedCategory.className = 'sidebar-category';
+        savedCategory.textContent = 'Saved Scripts';
+        scriptsList.appendChild(savedCategory);
+        
+        
+        loadSavedScripts();
+        
+        
+        if (savedScripts.length === 0) {
+          const noScripts = document.createElement('div');
+          noScripts.className = 'script-item';
+          noScripts.textContent = 'No saved scripts';
+          scriptsList.appendChild(noScripts);
+        } else {
+          savedScripts.forEach(script => {
+            const item = document.createElement('div');
+            item.className = 'script-item saved-script';
+            
+            const content = document.createElement('div');
+            content.className = 'script-content';
+            
+            const title = document.createElement('div');
+            title.className = 'script-title';
+            title.textContent = script.title;
+            content.appendChild(title);
+            
+            item.appendChild(content);
+            item.onclick = () => createTab(script.title, script.script);
+            item.oncontextmenu = (e) => showContextMenu(e, script.title);
+            
+            if (isAutoExecuteScript(script.title)) {
+              const indicator = document.createElement('span');
+              indicator.className = 'autoexecute-indicator';
+              indicator.innerHTML = '⚡';
+              content.appendChild(indicator);
+            }
+            
+            scriptsList.appendChild(item);
+          });
+        }
+        
+        
+        const trendingCategory = document.createElement('div');
+        trendingCategory.className = 'sidebar-category';
+        trendingCategory.textContent = 'Trending Scripts';
+        scriptsList.appendChild(trendingCategory);
+        
+        if (!trendingLoaded) {
+          loadTrending();
+          trendingLoaded = true;
+        } else {
+          // If we already loaded trending scripts, render them from our stored data
+          if (trendingScripts.length > 0) {
+            trendingScripts.forEach(script => {
+              const item = document.createElement('div');
+              item.className = 'script-item searched-script';
+              
+              if (script.image) {
+                item.style.backgroundImage = `url('${script.image}')`;
+              } else if (script.game && script.game.imageUrl) {
+                item.style.backgroundImage = `url('${script.game.imageUrl}')`;
+              }
+              
+              const content = document.createElement('div');
+              content.className = 'script-content';
+              
+              const title = document.createElement('div');
+              title.className = 'script-title';
+              title.textContent = script.title || "Unnamed Script";
+              content.appendChild(title);
+              
+              if (script.game && script.game.name) {
+                const game = document.createElement('div');
+                game.className = 'script-game';
+                game.textContent = script.game.name;
+                content.appendChild(game);
+              }
+              
+              const meta = document.createElement('div');
+              meta.className = 'script-meta';
+              
+              content.appendChild(meta);
+              item.appendChild(content);
+              
+              setupTrendingScriptItem(item, script);
+              scriptsList.appendChild(item);
+            });
+          } else {
+            // If we don't have trending scripts stored for some reason, reload them
+            const loadingItem = document.createElement('div');
+            loadingItem.className = 'script-item';
+            loadingItem.textContent = 'Loading trending scripts...';
+            scriptsList.appendChild(loadingItem);
+            loadTrending();
+          }
+        }
+      }
+
+      document.getElementById('confirmRename').addEventListener('click', () => {
+        const newName = document.getElementById('renameInput').value.trim();
+        
+        if (!newName) {
+          showToast("Script name is required", true);
+          return;
+        }
+        
+        if (savedScripts.some(s => s.title === newName)) {
+          showToast(`Script "${newName}" already exists`, true);
+          return;
+        }
+        
+        const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
+        tab.dataset.name = newName;
+        
+        const tabNameElement = tab.querySelector('span');
+        if (tabNameElement) {
+          tabNameElement.textContent = newName;
+        }
+        
+        saveScriptContent(tab, newName);
+        
+        document.getElementById('renameDialog').style.display = 'none';
+      });
+
+      document.getElementById('cancelRename').addEventListener('click', () => {
+        document.getElementById('renameDialog').style.display = 'none';
+      });
+
+      document.getElementById('renameInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('confirmRename').click();
+        } else if (e.key === 'Escape') {
+          document.getElementById('cancelRename').click();
+        }
+      });
+
+      function setupTrendingScriptItem(item, script) {
+        item.onclick = () => {
+          if (script.script) {
+            createTab(script.title + ".txt", script.script);
+          } else if (script._id) {
+            showToast("Loading script...");
+            
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'loading-indicator';
+            loadingIndicator.textContent = 'Loading...';
+            item.appendChild(loadingIndicator);
+            
+            fetchScriptContent(script._id)
+              .then(content => {
+                if (item.querySelector('.loading-indicator')) {
+                  item.querySelector('.loading-indicator').remove();
+                }
+                
+                if (content) {
+                  createTab(script.title + ".txt", content);
+                } else {
+                  showToast("Couldn't load script content", true);
+                }
+              })
+              .catch(err => {
+                if (item.querySelector('.loading-indicator')) {
+                  item.querySelector('.loading-indicator').remove();
+                }
+                
+                showToast("Error: " + err.message, true);
+              });
+          } else {
+            showToast("Script ID not available", true);
+          }
+        };
+        
+        return item;
+      }
+
+      
+      let fsWatcher = null;
+
+      function startFileWatcher() {
+        if (fsWatcher) {
+          fsWatcher.close();
+        }
+        
+        try {
+          fsWatcher = fs.watch(scriptsDirectory, { persistent: true }, (eventType, filename) => {
+            if (filename && (filename.endsWith('.txt') || eventType === 'rename')) {
+              console.log(`File ${filename} ${eventType}`);
+              loadSavedScripts();
+              if (sidebar.classList.contains('open')) {
+                renderSidebar();
+              }
+            }
+          });
+          console.log("File watcher started for scripts directory");
+        } catch (err) {
+          console.error("Error starting file watcher:", err);
         }
       }
     </script>

@@ -11,9 +11,13 @@ ipcMain.handle('start-log-watcher', async () => {
   return logWatcher.start(mainWindow)
 })
 
-ipcMain.on('start-drag', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  win.startDrag();
+ipcMain.handle('show-save-dialog', async () => {
+  const { dialog } = require('electron');
+  return dialog.showSaveDialog({
+    title: 'Save Script',
+    defaultPath: path.join(require('os').homedir(), 'Documents', 'Tritium'),
+    filters: [{ name: 'Text Files', extensions: ['txt'] }]
+  });
 });
 
 async function ligma(scriptContent) {
@@ -76,17 +80,17 @@ function processData(data) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    resizable: false,
+    resizable: true,
+    minWidth: 1450,
+    minHeight: 760,
     width: 1450,
-    height: 720,
+    height: 760,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,  
     },
     icon: __dirname + './icon.png',
     title: "Tritium",
-    titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 1408, y: 12 },
   });
   
   mainWindow.setMenuBarVisibility(false);
