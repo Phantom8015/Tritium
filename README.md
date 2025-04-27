@@ -14,3 +14,7 @@ Run
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Phantom8015/Tritium/refs/heads/main/install.sh | bash
 ```
+
+# Credits
+
+- [Bisher Almasri - Rustrogen](https://github.com/bisher-almasri/rustrogen)
