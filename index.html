@@ -1728,7 +1728,7 @@
         if (autoExecScripts.length > 0) {
           autoExecScripts.forEach(scriptName => {
             const script = savedScripts.find(s => s.title === scriptName);
-            const code = script.script;
+            const code = script ? script.script : `-- Script "${scriptName}" not found`;
             console.log(code)
             updateStatus("Executing...");
             console.log("Executing:", code);
