@@ -1342,7 +1342,7 @@
       async function loadTrending() {
         updateStatus("Loading trending scripts...");
         try {
-          const res = await fetch('https://scriptblox.com/api/script/trending?max=30');
+          const res = await fetch('https://scriptblox.com/api/script/trending?');
           const data = await res.json();
           
           if (data.result && data.result.scripts) {
@@ -1352,7 +1352,7 @@
             loadingItem.textContent = 'Loading scripts...';
             scriptsList.appendChild(loadingItem);
             
-            // Store the trending scripts data
+            
             trendingScripts = data.result.scripts;
             
             const batchSize = 3;
@@ -1530,7 +1530,7 @@
       async function searchScripts(query) {
         if (!query || query.length < 2) return;
         
-        max=30
+        
         const thisSearchId = ++currentSearchId;
         
         scriptsList.innerHTML = "";
@@ -1582,20 +1582,20 @@
         try {
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          max=30
+          
           if (thisSearchId !== currentSearchId) {
             console.log(`Search ${thisSearchId} abandoned, current is ${currentSearchId}`);
-            return; max=30
+            return; 
           }
 
-          const searchUrl = `https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}&max=30`;
+          const searchUrl = `https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}&`;
           const response = await fetch(searchUrl);
           const data = await response.json();
           
-          max=30
+          
           if (thisSearchId !== currentSearchId) {
             console.log(`Search ${thisSearchId} results abandoned, current is ${currentSearchId}`);
-            return; max=30
+            return; 
           }
           
           searchingIndicator.textContent = 'Online Results';
@@ -1642,25 +1642,19 @@
             }
             
             if (!hasDisplayedScripts) {
-              max=30
+              
               if (thisSearchId === currentSearchId) {
-                const noResults = document.createElement('div');
-                noResults.className = 'script-item';
-                noResults.textContent = 'No online scripts found';
-                scriptsList.appendChild(noResults);
+                
               }
             }
           } else {
-            max=30
+            
             if (thisSearchId === currentSearchId) {
-              const noResults = document.createElement('div');
-              noResults.className = 'script-item';
-              noResults.textContent = 'No online scripts found';
-              scriptsList.appendChild(noResults);
+              
             }
           }
         } catch (err) {
-          max=30
+          
           if (thisSearchId === currentSearchId) {
             console.error("Error searching scripts:", err);
             searchingIndicator.textContent = 'Online Results (Error)';
@@ -1822,7 +1816,7 @@
           loadTrending();
           trendingLoaded = true;
         } else {
-          // If we already loaded trending scripts, render them from our stored data
+          
           if (trendingScripts.length > 0) {
             trendingScripts.forEach(script => {
               const item = document.createElement('div');
@@ -1859,7 +1853,7 @@
               scriptsList.appendChild(item);
             });
           } else {
-            // If we don't have trending scripts stored for some reason, reload them
+            
             const loadingItem = document.createElement('div');
             loadingItem.className = 'script-item';
             loadingItem.textContent = 'Loading trending scripts...';
