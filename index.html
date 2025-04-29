@@ -299,6 +299,8 @@
         padding: 0 20px;
         position: relative;
         z-index: 10;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .button, .exec-button {
@@ -317,6 +319,10 @@
         justify-content: center;
         margin-left: 10px;
         height: 50px;
+        position: relative;
+        z-index: 11;
+        min-width: 50px;
+        box-sizing: border-box;
       }
 
       .exec-button {
@@ -326,6 +332,7 @@
         border-radius: 50%;
         width: 50px;
         height: 50px;
+        flex-shrink: 0;
       }
 
       .button:hover {
@@ -363,6 +370,8 @@
         border-radius: 3px;
         margin-right: auto;
         font-size: 15px;
+        position: relative;
+        z-index: 11;
       }
 
       .toast {
@@ -757,9 +766,9 @@
       let logWatcher = null;
       let lastLogLine = null;
       let logFilePath = null;
-      let trendingLoaded = false;
+      let updatedLoaded = false;
       let currentSearchId = 0;
-      let trendingScripts = [];
+      let updatedScripts = [];
 
       
       const scriptsDirectory = path.join(require('os').homedir(), 'Documents', 'Tritium');
@@ -1408,10 +1417,10 @@
           }, 500);
         }
       }
-      async function loadTrending() {
-        updateStatus("Loading trending scripts...");
+      async function loadupdated() {
+        updateStatus("Loading updated scripts...");
         try {
-          const res = await fetch('https://scriptblox.com/api/script/trending?');
+          const res = await fetch('https://scriptblox.com/api/script/fetch');
           const data = await res.json();
           
           if (data.result && data.result.scripts) {
@@ -1422,7 +1431,7 @@
             scriptsList.appendChild(loadingItem);
             
             
-            trendingScripts = data.result.scripts;
+            updatedScripts = data.result.scripts;
             
             const batchSize = 3;
             const scripts = data.result.scripts;
@@ -1527,20 +1536,20 @@
             loadingItem.remove();
             
           } else {
-            const noTrending = document.createElement('div');
-            noTrending.className = 'script-item';
-            noTrending.textContent = 'No trending scripts available';
-            scriptsList.appendChild(noTrending);
+            const noupdated = document.createElement('div');
+            noupdated.className = 'script-item';
+            noupdated.textContent = 'No updated scripts available';
+            scriptsList.appendChild(noupdated);
           }
           
           updateStatus("Ready");
         } catch (err) {
-          console.error("Error loading trending scripts:", err);
+          console.error("Error loading updated scripts:", err);
           
-          const noTrending = document.createElement('div');
-          noTrending.className = 'script-item';
-          noTrending.textContent = 'Error loading trending scripts';
-          scriptsList.appendChild(noTrending);
+          const noupdated = document.createElement('div');
+          noupdated.className = 'script-item';
+          noupdated.textContent = 'Error loading updated scripts';
+          scriptsList.appendChild(noupdated);
           
           const infiniteYield = document.createElement('div');
           infiniteYield.className = 'script-item';
@@ -1712,7 +1721,7 @@
               meta.className = 'script-meta';
 
               item.appendChild(content);
-              setupTrendingScriptItem(item, script);
+              setupupdatedScriptItem(item, script);
               
               scriptsList.appendChild(item);
             }
@@ -1775,7 +1784,7 @@
         sidebar.classList.add('open');
         
         
-        trendingLoaded = false;
+        updatedLoaded = false;
         renderSidebar();
         
         let lastJoinLine = null;
@@ -1883,18 +1892,18 @@
         }
         
         
-        const trendingCategory = document.createElement('div');
-        trendingCategory.className = 'sidebar-category';
-        trendingCategory.textContent = 'Trending Scripts';
-        scriptsList.appendChild(trendingCategory);
+        const updatedCategory = document.createElement('div');
+        updatedCategory.className = 'sidebar-category';
+        updatedCategory.textContent = 'Recently updated scripts';
+        scriptsList.appendChild(updatedCategory);
         
-        if (!trendingLoaded) {
-          loadTrending();
-          trendingLoaded = true;
+        if (!updatedLoaded) {
+          loadupdated();
+          updatedLoaded = true;
         } else {
           
-          if (trendingScripts.length > 0) {
-            trendingScripts.forEach(script => {
+          if (updatedScripts.length > 0) {
+            updatedScripts.forEach(script => {
               const item = document.createElement('div');
               item.className = 'script-item searched-script';
               
@@ -1929,16 +1938,16 @@
               content.appendChild(meta);
               item.appendChild(content);
               
-              setupTrendingScriptItem(item, script);
+              setupupdatedScriptItem(item, script);
               scriptsList.appendChild(item);
             });
           } else {
             
             const loadingItem = document.createElement('div');
             loadingItem.className = 'script-item';
-            loadingItem.textContent = 'Loading trending scripts...';
+            loadingItem.textContent = 'Loading updated scripts...';
             scriptsList.appendChild(loadingItem);
-            loadTrending();
+            loadupdated();
           }
         }
       }
@@ -1982,7 +1991,7 @@
         }
       });
 
-      function setupTrendingScriptItem(item, script) {
+      function setupupdatedScriptItem(item, script) {
         item.onclick = () => {
           if (script.script) {
             createTab(script.title + ".txt", script.script);
