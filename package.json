@@ -1,11 +1,10 @@
 {
   "name": "Tritium",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Hydrogen custom ui",
   "author": "phantom8015",
   "dependencies": {
-    "chokidar": "^4.0.3",
-    "prompt-sync": "^4.2.0"
+    "chokidar": "^4.0.3"
   },
   "devDependencies": {
     "electron": "^29.1.3"

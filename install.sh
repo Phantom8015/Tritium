@@ -14,7 +14,7 @@ else
   echo "Tritium has been deleted. Proceeding with installation."
 fi
 echo "Downloading Tritium..."
-curl -L -o "/tmp/Tritium/Tritium.zip" "https://github.com/Phantom8015/Tritium/releases/download/v2.1.2/Tritium-2.1.2-arm64-mac.zip"
+curl -L -o "/tmp/Tritium/Tritium.zip" "https://github.com/Phantom8015/Tritium/releases/download/v2.2.0/Tritium-2.2.0-arm64-mac.zip"
 echo "Extracting Tritium..."
 unzip -o "/tmp/Tritium/Tritium.zip" -d "/tmp/Tritium"
 mv -f "/tmp/Tritium/Tritium.app" "/Applications"
