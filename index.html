@@ -15,7 +15,7 @@
         margin: 0;
         padding: 0;
         font-family: 'Fira Code', monospace;
-        background-color: #000000;
+        background-color: #01000a;
         color: #d4d4d4;
         height: 100vh;
         overflow: hidden;
@@ -61,7 +61,7 @@
       }
 
       .tab.active {
-        background-color: #000000;
+        background-color: #01000a;
         color: #569CD6;
       }
 
@@ -81,7 +81,7 @@
       .sidebar {
         width: 0;
         transition: width 0.3s;
-        background: #252526;
+        background: #0e0e0e;
         border-left: 1px solid #333;
         display: flex;
         flex-direction: column;
@@ -98,15 +98,18 @@
         border-radius: 5px;
         border: none;
         outline: none;
-        background: #000000;
+        background: #01000a;
         color: #ccc;
         font-family: 'Fira Code', monospace;
         font-size: 14px;
-        transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
+        box-shadow: 0 0 5px #569CD6, 0 0 10px #569CD6, 0 0 15px #569CD6;
+        
+        
       }
 
       .sidebar input:focus {
         border: 1px solid #569CD6;
+        box-shadow: 0 0 5px #569CD6, 0 0 15px #569CD6, 0 0 20px #569CD6;
       }
 
       .sidebar .scripts {
@@ -124,12 +127,12 @@
       }
 
       .script-item:hover {
-        background: #000000;
+        background: #01000a;
       }
 
       .editor-container {
         flex: 1;
-        background-color: #000000;
+        background-color: #01000a;
         position: relative;
         overflow: hidden;
         
@@ -148,11 +151,11 @@
       }
 
       .CodeMirror-gutters {
-        background-color: #000000 !important;
+        background-color: #01000a !important;
       }
 
       .CodeMirror-linenumber {
-        background-color: #000000 !important;
+        background-color: #01000a !important;
       }
 
       .script-item {
@@ -272,12 +275,12 @@
         font-size: 15px !important;
         line-height: 1.5 !important;
         color: #d4d4d4 !important;
-        background-color: #000000 !important;
+        background-color: #01000a !important;
       }
 
       .tooltip {
         position: absolute;
-        background: #000000;
+        background: #01000a;
         color: #ccc;
         padding: 8px 12px;
         border-radius: 5px;
@@ -354,7 +357,7 @@
       }
 
       #status {
-        background: #000000;
+        background: #01000a;
         color: #569CD6;
         padding: 4px 8px;
         border-radius: 3px;
@@ -414,7 +417,7 @@
       }
 
       .context-menu-item:hover {
-        background-color: #000000;
+        background-color: #01000a;
       }
 
       .context-menu-separator {
@@ -530,8 +533,7 @@
         padding: 10px 15px;
         font-weight: bold;
         color: #569CD6;
-        border-bottom: 1px solid #333;
-        background-color: #1e1e1e;
+        background-color: #0e0e0e;
       }
 
       .rename-dialog {
@@ -1033,9 +1035,24 @@
             }
           }
           
-          
           titleElement.textContent = newName || originalName;
           input.replaceWith(titleElement);
+          if (currentTab) {
+            const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
+            if (tab) {
+              console.log("i hate all black people")
+              tab.dataset.realTabName = newName;
+              console.log("i hate all brown people")
+              if (newName.length > 15) {
+                newName = newName.substring(0, 10) + '...';
+              }
+              console.log("i hate all white people")
+              tab.dataset.name = newName;
+              console.log("i hate all yellow people")
+              tab.querySelector('span').textContent = newName;
+              console.log("i hate all first nation people")
+            }
+          }
         }
         
         input.addEventListener('blur', handleRename);
@@ -1098,6 +1115,11 @@
         const tab = document.createElement('div');
         tab.className = 'tab new-tab'; 
         const tabName = document.createElement('span');
+        const realTabName = name;
+        if (name.length > 15) {
+          name = name.substring(0, 10) + '...';
+        }
+        tab.dataset.realTabName = realTabName;
         tabName.innerText = name;
         tab.appendChild(tabName);
         const closeBtn = document.createElement('span');
@@ -1175,8 +1197,8 @@
         }
         const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
         if (!tab) return;
-        let scriptName = tab.dataset.name;
-
+        let scriptName = tab.dataset.realTabName;
+        console.log(scriptName);
         if (scriptName === "Untitled.lua") {
           const renameDialog = document.getElementById('renameDialog');
           renameDialog.style.display = 'flex';
@@ -1190,28 +1212,75 @@
       }
 
       function saveScriptContent(tab, scriptName) {
-        const scriptContent = editors[currentTab].getValue();
-        const filePath = path.join(scriptsDirectory, `${scriptName}.txt`);
+        if (!scriptName) {
+          showToast("Script name is required", true);
+          return;
+        }
+        if (!scriptName.endsWith('.txt')) {
+          scriptName = scriptName + '.txt';
+        }
 
-        fs.writeFile(filePath, scriptContent, (err) => {
-          if (err) {
-            showToast("Error saving script: " + err.message, true);
+        const scriptContent = editors[currentTab].getValue();
+        const filePath = path.join(scriptsDirectory, scriptName);
+
+        
+        let backupPath = null;
+        if (fs.existsSync(filePath)) {
+          backupPath = filePath + '.bak';
+          try {
+            fs.copyFileSync(filePath, backupPath);
+          } catch (err) {
+            showToast("Error creating backup: " + err.message, true);
             return;
           }
-          showToast(`Script "${scriptName}" saved successfully!`);
-          
-          
-          const tabNameElement = tab.querySelector('span');
-          if (tabNameElement) {
-            tabNameElement.textContent = scriptName;
+        }
+
+        
+        const tempPath = filePath + '.tmp';
+        fs.writeFile(tempPath, scriptContent, (err) => {
+          if (err) {
+            showToast("Error saving script: " + err.message, true);
+            
+            if (fs.existsSync(tempPath)) {
+              fs.unlinkSync(tempPath);
+            }
+            return;
           }
+
           
-          
-          loadSavedScripts();
-          
-          
-          if (sidebar.classList.contains('open') && !searchBox.value) {
-            renderSidebar();
+          try {
+            fs.renameSync(tempPath, filePath);
+            
+            
+            showToast(`Script "${scriptName.replace('.txt', '')}" saved successfully!`);
+            
+            const tabNameElement = tab.querySelector('span');
+            if (tabNameElement) {
+              tabNameElement.textContent = scriptName.replace('.txt', '');
+            }
+            
+            
+            loadSavedScripts();
+            
+            
+            if (sidebar.classList.contains('open') && !searchBox.value) {
+              renderSidebar();
+            }
+
+            
+            if (backupPath && fs.existsSync(backupPath)) {
+              fs.unlinkSync(backupPath);
+            }
+          } catch (err) {
+            showToast("Error finalizing save: " + err.message, true);
+            
+            if (backupPath && fs.existsSync(backupPath)) {
+              try {
+                fs.renameSync(backupPath, filePath);
+              } catch (restoreErr) {
+                showToast("Error restoring from backup: " + restoreErr.message, true);
+              }
+            }
           }
         });
       }
@@ -1385,11 +1454,14 @@
                   item.className = 'script-item searched-script';
                   
                   if (script.image) {
-                      item.style.backgroundImage = `url('${script.image}')`;
+                      if (script.image.startsWith("/images")) {
+                        item.style.backgroundImage = `url('https://scriptblox.com/${script.image}')`;
+                      } else {
+                        item.style.backgroundImage = `url('${script.image}')`;
+                      }
                   } else if (script.game && script.game.imageUrl) {
                       item.style.backgroundImage = `url('${script.game.imageUrl}')`;
                   }
-                  
                   const content = document.createElement('div');
                   content.className = 'script-content';
                   
@@ -1612,9 +1684,13 @@
               item.className = 'script-item searched-script';
               
               if (script.image) {
-                item.style.backgroundImage = `url('${script.image}')`;
+                if (script.image.startsWith("/images")) {
+                  item.style.backgroundImage = `url('https://scriptblox.com/${script.image}')`;
+                } else {
+                  item.style.backgroundImage = `url('${script.image}')`;
+                }
               } else if (script.game && script.game.imageUrl) {
-                item.style.backgroundImage = `url('${script.game.imageUrl}')`;
+                  item.style.backgroundImage = `url('${script.game.imageUrl}')`;
               }
               
               const content = document.createElement('div');
@@ -1634,7 +1710,7 @@
               
               const meta = document.createElement('div');
               meta.className = 'script-meta';
-              
+
               item.appendChild(content);
               setupTrendingScriptItem(item, script);
               
@@ -1823,9 +1899,13 @@
               item.className = 'script-item searched-script';
               
               if (script.image) {
-                item.style.backgroundImage = `url('${script.image}')`;
+                if (script.image.startsWith("/images")) {
+                  item.style.backgroundImage = `url('https://scriptblox.com/${script.image}')`;
+                } else {
+                  item.style.backgroundImage = `url('${script.image}')`;
+                }
               } else if (script.game && script.game.imageUrl) {
-                item.style.backgroundImage = `url('${script.game.imageUrl}')`;
+                  item.style.backgroundImage = `url('${script.game.imageUrl}')`;
               }
               
               const content = document.createElement('div');
@@ -1878,6 +1958,7 @@
         
         const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
         tab.dataset.name = newName;
+        tab.dataset.realTabName = newName;
         
         const tabNameElement = tab.querySelector('span');
         if (tabNameElement) {
