@@ -12,7 +12,6 @@ const tabs = document.getElementById('tabs');
 const editorContainer = document.getElementById('editor-container');
 const scriptsList = document.getElementById('scripts');
 const searchBox = document.getElementById('searchBox');
-const tooltip = document.getElementById('tooltip');
 const sidebar = document.getElementById('sidebar');
 const statusElement = document.getElementById('status');
 const toast = document.getElementById('toast');
@@ -229,7 +228,6 @@ function toggleAutoExecuteScript(scriptName) {
   const autoExecScripts = loadAutoExecuteScripts();
   const index = autoExecScripts.indexOf(scriptName);
   if (index === -1) {
-    const script = savedScripts.find(s => s.title === scriptName);
     autoExecScripts.push(scriptName);
   } else {
     autoExecScripts.splice(index, 1);
@@ -558,53 +556,6 @@ function saveScriptContent(tab, scriptName) {
   });
 }
 
-function renderSavedScripts() {
-    scriptsList.innerHTML = "";
-    if (savedScripts.length === 0) {
-        scriptsList.innerHTML = "<div class='script-item saved-script'>No saved scripts</div>";
-        return;
-    }
-    savedScripts.forEach(script => {
-        const item = document.createElement('div');
-        item.className = 'script-item saved-script';
-        
-        const content = document.createElement('div');
-        content.className = 'script-content';
-        
-        const title = document.createElement('div');
-        title.className = 'script-title';
-        title.innerText = script.title;
-        content.appendChild(title);
-        
-        if (script.game) {
-            const game = document.createElement('div');
-            game.className = 'script-game';
-            game.innerText = `${script.game}`;
-            content.appendChild(game);
-        }
-        
-        if (script.description) {
-            const desc = document.createElement('div');
-            desc.className = 'script-description';
-            desc.innerText = script.description;
-            content.appendChild(desc);
-        }
-        
-        item.appendChild(content);
-        item.onclick = () => createTab(script.title, script.script);
-        item.oncontextmenu = (e) => showContextMenu(e, script.title);
-        
-        if (isAutoExecuteScript(script.title)) {
-            const indicator = document.createElement('span');
-            indicator.className = 'autoexecute-indicator';
-            indicator.innerHTML = '⚡';
-            content.appendChild(indicator);
-        }
-        
-        scriptsList.appendChild(item);
-    });
-}
-
 function updateStatus(message, isError = false) {
   statusElement.textContent = message;
   statusElement.style.color = isError ? "#e74c3c" : "#569CD6";
@@ -843,26 +794,6 @@ async function searchScripts(query) {
   }
 }
 
-function checkConnection() {
-  if (!isElectron) {
-    updateStatus("Ready (Not in Electron)");
-    return;
-  }
-  if (ipcRenderer) {
-    ipcRenderer.send('checkConnection');
-    ipcRenderer.once('connectionStatus', (event, result) => {
-      if (result.connected) {
-        currentPort = result.port;
-        updateStatus(`Ready on port ${currentPort}`);
-      } else {
-        updateStatus("Not connected", true);
-        setTimeout(checkConnection, 3000);
-      }
-    });
-  } else {
-    updateStatus("Ready (Dev Mode)");
-  }
-}
 window.onload = function() {
   console.log("Auto-execute scripts:", loadAutoExecuteScripts());
   console.log("Saved scripts:", savedScripts);
@@ -878,7 +809,6 @@ window.onload = function() {
   updatedLoaded = false;
   renderSidebar();
   
-  let lastJoinLine = null;
   if (isElectron) {
     const logWorker = JoinWatcher();
     window.addEventListener('beforeunload', () => {
@@ -899,8 +829,28 @@ window.onload = function() {
 };
 
 function autoexec() {
-  console.log("LALALA");
-  const autoExecScripts = loadAutoExecuteScripts();
+  const watermarkDisabler = "cleardrawcache()"; // NITROGEN MAN I SAY NO
+
+  if (isElectron && ipcRenderer) {
+    try {
+      ipcRenderer.send('invokeAction', watermarkDisabler);
+      ipcRenderer.once('actionReply', (event, result) => {
+        if (result.startsWith('Error:')) {
+          updateStatus("Failed", true);
+        } else {
+          updateStatus("Success");
+          statusElement.style.color = "#2ecc71";
+        }
+        setTimeout(() => {
+          updateStatus(currentPort ? `Ready on port ${currentPort}` : "Ready");
+        }, 3000);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  let autoExecScripts = loadAutoExecuteScripts();
+
   if (autoExecScripts.length > 0) {
     autoExecScripts.forEach(scriptName => {
       const script = savedScripts.find(s => s.title === scriptName);

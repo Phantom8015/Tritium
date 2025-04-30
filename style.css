@@ -20,36 +20,46 @@ body::-webkit-scrollbar,
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
 .tabs {
-  background-color: #0e0e0e;
+  background-color: transparent;
   display: flex;
-  align-items: center;
-  height: 38px;
-  overflow: hidden;
-  -webkit-app-region: drag;
-  cursor: move;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 8px;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 12px;
+  margin-top: 20px;
 }
 
 .tab {
-  padding: 0 5px;
-  height: 100%;
+  background: linear-gradient(to right, #252526 0%, #1e1e1e 100%);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  border: 1px solid #18181c;
+  margin: 0 4px;
+  padding: 0 18px;
+  height: 38px;
+  min-width: 60px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #d4d4d4;
   cursor: pointer;
-  border-right: 1px solid #333;
-  font-size: 14px;
+  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
   position: relative;
-  min-width: 20px;
-  flex: 1 1 auto;
-  transition: flex 0.2s ease, opacity 0.2s ease;
+  flex: none;
 }
 
 .tab.active {
-  background-color: #18181c;
+  background: linear-gradient(to right, #18181c 0%, #252526 100%);
   color: #569CD6;
+  box-shadow: 0 4px 16px #569CD633;
+  border: 1.5px solid #569CD6;
 }
 
 .tab .close-btn {
@@ -60,43 +70,57 @@ body::-webkit-scrollbar,
   -webkit-app-region: no-drag;
 }
 
+.tab:hover {
+  box-shadow: 0 4px 16px #569CD633;
+  background: linear-gradient(to right, #1e1e1e 0%, #161616 100%);
+  color: #569CD6;
+}
+
 .tab:hover .close-btn { 
   opacity: 1;
-  -webkit-app-region: no-drag;
 }
 
 .sidebar {
   width: 0;
   transition: width 0.3s;
   background: #0e0e0e;
-  border-left: 1px solid #333;
+  border-radius: 20px;
+  border: 1px solid #18181c;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  margin: 8px;
 }
 
 .sidebar.open {
   width: 300px;
+  border-radius: 20px;
+  background: #0e0e0e;
+  border: 1px solid #18181c;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 .sidebar input {
-  margin: 12px;
-  padding: 10px;
-  border-radius: 5px;
-  border: none;
+  margin: 16px 16px 8px 16px;
+  padding: 0 18px;
+  height: 38px;
+  border-radius: 16px;
+  border: 1.5px solid #18181c;
   outline: none;
   background: #18181c;
-  color: #ccc;
+  color: #d4d4d4;
   font-family: 'Fira Code', monospace;
-  font-size: 14px;
-  box-shadow: 0 0 5px #569CD6, 0 0 10px #569CD6, 0 0 15px #569CD6;
-  
-  
+  font-size: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
 }
 
 .sidebar input:focus {
-  border: 1px solid #569CD6;
-  box-shadow: 0 0 5px #569CD6, 0 0 15px #569CD6, 0 0 20px #569CD6;
+  border: 1.5px solid #569CD6;
+  background: linear-gradient(to right, #18181c 0%, #252526 100%);
+  color: #569CD6;
+  box-shadow: 0 4px 16px #569CD633;
 }
 
 .sidebar .scripts {
@@ -106,7 +130,7 @@ body::-webkit-scrollbar,
 
 .script-item {
   padding: 10px 15px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #18181c;
   cursor: pointer;
   font-size: 14px;
   color: #ccc;
@@ -122,7 +146,9 @@ body::-webkit-scrollbar,
   background-color: #18181c;
   position: relative;
   overflow: hidden;
-  
+  border-radius: 0 0 16px 16px;
+  margin: 8px 8px 0 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 .editor-wrapper {
@@ -131,6 +157,8 @@ body::-webkit-scrollbar,
   display: none;
   overflow: auto;
   position: absolute;
+  border-radius: 16px;
+  margin: 0;
 }
 
 .editor-wrapper.active {
@@ -152,7 +180,7 @@ body::-webkit-scrollbar,
   margin: 8px;
   padding: 15px;
   transition: all 0.3s ease;
-  border: 1px solid #333;
+  border: 1px solid #18181c;
 }
 .script-item.searched-script {
   background-size: cover;
@@ -185,7 +213,7 @@ body::-webkit-scrollbar,
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to right, rgba(37, 37, 38, 0.9) 0%, rgba(37, 37, 38, 0.7) 50%, rgba(37, 37, 38, 0.5) 100%);
+  background: #18181c;
   border-radius: 8px;
   z-index: 0;
 }
@@ -286,10 +314,17 @@ footer {
   justify-content: flex-end;
   align-items: center;
   padding: 0 20px;
-  position: relative;
+  position: static;
   z-index: 10;
-  width: 100%;
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
   box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px solid #18181c;
+  border-top: none;
+  margin: 0 8px 8px 8px;
 }
 
 .button, .exec-button {
@@ -297,7 +332,7 @@ footer {
   color: white;
   padding: 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 16px !important;
   font-family: 'Fira Code', monospace;
   font-size: 15px;
   font-weight: 500;
@@ -399,7 +434,7 @@ footer {
 .context-menu {
   position: absolute;
   background-color: #252526;
-  border: 1px solid #333;
+  border: 1px solid #18181c;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   z-index: 1000;
@@ -420,7 +455,7 @@ footer {
 
 .context-menu-separator {
   height: 1px;
-  background-color: #333;
+  background-color: #18181c;
   margin: 4px 0;
 }
 
@@ -437,12 +472,21 @@ footer {
 }
 
 .console-container {
-  height: 250px;
+  height: 220px;
   background-color: #0e0e0e;
-  border-top: 1px solid #333;
-  
+  border-radius: 20px;
+  margin: 0 8px 0 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   display: flex;
   flex-direction: column;
+  border: 1px solid #18181c;
+  border-bottom: none;
+  overflow: hidden;
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: 20;
 }
 
 .console-header {
@@ -567,7 +611,7 @@ footer {
   padding: 10px;
   margin: 15px 0;
   background-color: #1e1e1e;
-  border: 1px solid #333;
+  border: 1px solid #18181c;
   color: #d4d4d4;
   font-family: 'Fira Code', monospace;
   box-sizing: border-box;
@@ -586,14 +630,14 @@ footer {
 .rename-buttons button {
   padding: 8px 15px;
   background-color: #1e1e1e;
-  border: 1px solid #333;
+  border: 1px solid #18181c;
   color: #d4d4d4;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .rename-buttons button:hover {
-  background-color: #333;
+  background-color: #18181c;
 }
 
 #confirmRename {
