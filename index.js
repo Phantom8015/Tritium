@@ -73,8 +73,8 @@ async function ligma(scriptContent) {
 }
 
 function processData(data) {
-  console.log("SIGMA"); 
-  return ligma(data).catch(err => `Error: ${err.message}`);
+  const code = typeof data === 'object' && data.code ? data.code : data;
+  return ligma(code).catch(err => `Error: ${err.message}`);
 }
 
 
@@ -111,8 +111,6 @@ function createWindow() {
   
   ipcMain.on('invokeAction', function(event, data) {
     console.log("Received IPC message:", data);
-    console.log("SIGMA"); 
-    
     
     processData(data).then(result => {
       event.sender.send('actionReply', result);

@@ -7,23 +7,36 @@
     <meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/monokai.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-darker.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/hint/show-hint.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
     <div class="container">
-      <div class="tabs" id="tabs"></div>
+      <div class="tabs-bar">
+        <div class="tabs" id="tabs"></div>
+        <button id="new-tab-btn" class="tab add-tab-btn" title="New Tab"><i class="fas fa-plus"></i></button>
+      </div>
       <div class="editor-container" id="editor-container">
         <div class="tooltip" id="tooltip"></div>
       </div>
       <div class="console-container">
-        <div class="console-header"><span>Console</span><span class="console-clear" id="clearConsole">Clear</span></div>
+        <div class="console-header">
+          <span><i class="fas fa-terminal"></i> Console</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="console-btn" id="copyConsole" title="Copy Console"><i class="fas fa-copy"></i></button>
+            <button class="console-btn" id="clearConsole" title="Clear Console"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
         <div class="console-output" id="consoleOutput"></div>
       </div>
       <footer>
-        <div id="status">Connecting...</div><button id="roblox-button" class="button roblox-button">Launch Roblox<i></i></button><button id="save-button" class="button save-button">Save <i class="fas fa-save"></i></button><button id="toggleSidebar" class="button scripts-button">Scripts</button><button id="exec-button" class="exec-button"> <i class="fas fa-play"></i></button>
+        <button id="save-button" class="button save-button" title="Save"><i class="fas fa-save"></i></button>
+        <div style="flex:1; display:flex; justify-content:center; align-items:center;">
+          <button id="roblox-button" class="button roblox-button">Launch Roblox<i></i></button>
+        </div>
+        <button id="toggleSidebar" class="button scripts-button">Scripts</button><button id="exec-button" class="exec-button"> <i class="fas fa-play"></i></button>
       </footer>
     </div>
     <div class="sidebar" id="sidebar"><input type="text" id="searchBox" placeholder="Search scripts..." />

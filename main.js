@@ -13,7 +13,6 @@ const editorContainer = document.getElementById('editor-container');
 const scriptsList = document.getElementById('scripts');
 const searchBox = document.getElementById('searchBox');
 const sidebar = document.getElementById('sidebar');
-const statusElement = document.getElementById('status');
 const toast = document.getElementById('toast');
 const contextMenu = document.getElementById('contextMenu');
 const renameScriptBtn = document.getElementById('renameScript');
@@ -32,7 +31,6 @@ let currentContextScript = null;
 let updatedLoaded = false;
 let currentSearchId = 0;
 let updatedScripts = [];
-
 
 const scriptsDirectory = path.join(require('os').homedir(), 'Documents', 'Tritium');
 
@@ -123,7 +121,7 @@ function createEditor(tabId, content) {
   const editor = CodeMirror(editorWrapper, {
     value: content || '-- New script',
     mode: "lua",
-    theme: "monokai",
+    theme: "material-darker",
     lineNumbers: true,
     indentUnit: 2,
     smartIndent: true,
@@ -282,7 +280,8 @@ renameScriptBtn.addEventListener('click', () => {
   input.focus();
   
   function handleRename() {
-    const newName = input.value.trim();
+    const newName = input.value.trim().split('.')[0];
+    
     
     if (newName && newName !== originalName) {
       const scriptIndex = savedScripts.findIndex(s => s.title === originalName);
@@ -308,20 +307,18 @@ renameScriptBtn.addEventListener('click', () => {
     
     titleElement.textContent = newName || originalName;
     input.replaceWith(titleElement);
-    if (currentTab) {
-      const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
-      if (tab) {
-        console.log("i hate all black people")
-        tab.dataset.realTabName = newName;
-        console.log("i hate all brown people")
-        if (newName.length > 15) {
-          newName = newName.substring(0, 10) + '...';
+    if (tabs.children.length > 0) {
+      for (let i = 0; i < tabs.children.length; i++) {
+        const tab = tabs.children[i];
+        if (tab.dataset.realTabName === originalName) {
+          tab.dataset.realTabName = newName;
+          let displayName = newName;
+          if (newName.length > 15) {
+            displayName = newName.substring(0, 10) + '...';
+          }
+          tab.dataset.name = displayName;
+          tab.querySelector('span').textContent = displayName;
         }
-        console.log("i hate all white people")
-        tab.dataset.name = newName;
-        console.log("i hate all yellow people")
-        tab.querySelector('span').textContent = newName;
-        console.log("i hate all first nation people")
       }
     }
   }
@@ -354,7 +351,7 @@ deleteScriptBtn.addEventListener('click', () => {
       }
       
       
-      const filePath = path.join(scriptsDirectory, `${currentContextScript}.txt`);
+      const filePath = path.join(scriptsDirectory, `${currentContextScript}`);
       try {
         fs.unlinkSync(filePath);
         savedScripts.splice(scriptIndex, 1);
@@ -377,8 +374,8 @@ autoExecuteScriptBtn.addEventListener('click', () => {
   }
 });
 
-function createTab(name = "Untitled.lua", content = "-- New script") {
-  if (tabs.children.length >= 10) {
+function createTab(name = "Untitled", content = "-- New script") {
+  if (tabs.children.length >= 7) {
     showToast("Maximum tabs reached", true);
     return;
   }
@@ -470,7 +467,7 @@ function saveCurrentScript() {
   if (!tab) return;
   let scriptName = tab.dataset.realTabName;
   console.log(scriptName);
-  if (scriptName === "Untitled.lua") {
+  if (scriptName === "Untitled") {
     const renameDialog = document.getElementById('renameDialog');
     renameDialog.style.display = 'flex';
     const renameInput = document.getElementById('renameInput');
@@ -556,10 +553,12 @@ function saveScriptContent(tab, scriptName) {
   });
 }
 
-function updateStatus(message, isError = false) {
-  statusElement.textContent = message;
-  statusElement.style.color = isError ? "#e74c3c" : "#569CD6";
-}
+document.getElementById('copyConsole').onclick = function() {
+  const output = document.getElementById('consoleOutput').innerText;
+  navigator.clipboard.writeText(output);
+  showToast("Console output copied to clipboard");
+};
+
 document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't') {
     e.preventDefault();
@@ -592,48 +591,8 @@ document.getElementById('roblox-button').addEventListener('click', launchRoblox)
 document.getElementById('save-button').addEventListener('click', saveCurrentScript);
 document.getElementById('exec-button').addEventListener('click', executeCurrentScript);
 
-function executeCurrentScript() {
-  if (!currentTab || !editors[currentTab]) {
-    updateStatus("No script selected", true);
-    return;
-  }
-  const code = editors[currentTab].getValue();
-  updateStatus("Executing...");
-  console.log("Executing:", code);
-  if (isElectron && ipcRenderer) {
-    try {
-      ipcRenderer.send('invokeAction', code);
-      ipcRenderer.once('actionReply', (event, result) => {
-        console.log("Result:", result);
-        if (result.startsWith('Error:')) {
-          updateStatus("Failed", true);
-          showToast(result, true);
-        } else {
-          updateStatus("Success");
-          statusElement.style.color = "#2ecc71";
-        }
-        setTimeout(() => {
-          updateStatus(currentPort ? `Ready on port ${currentPort}` : "Ready");
-        }, 3000);
-      });
-    } catch (err) {
-      console.error("Failed to send to Electron:", err);
-      showToast("Error: " + err.message, true);
-      updateStatus("Error", true);
-    }
-  } else {
-    showToast("Executing: " + code.substring(0, 30) + "...");
-    setTimeout(() => {
-      updateStatus("Success");
-      statusElement.style.color = "#2ecc71";
-      setTimeout(() => {
-        updateStatus(currentPort ? `Ready on port ${currentPort}` : "Ready");
-      }, 3000);
-    }, 500);
-  }
-}
 async function loadupdated() {
-  updateStatus("Loading updated scripts...");
+  showToast("Loading updated scripts...");
   try {
     const res = await fetch('https://scriptblox.com/api/script/fetch');
     const res2 = await fetch('https://rscripts.net/api/v2/scripts?page=1&orderBy=date');
@@ -655,7 +614,7 @@ async function loadupdated() {
       if (j < rscriptsScripts.length) merged.push(rscriptsScripts[j++]);
     }
     updatedScripts = merged;
-    updateStatus("Ready");
+    showToast("Ready");
     if (sidebar.classList.contains('open')) renderSidebar();
   } catch (err) {
     console.error("Error loading updated scripts:", err);
@@ -663,7 +622,7 @@ async function loadupdated() {
     noupdated.className = 'script-item';
     noupdated.textContent = 'Error loading updated scripts';
     scriptsList.appendChild(noupdated);
-    updateStatus("Ready (using local scripts)");
+    showToast("Ready");
   }
 }
 
@@ -801,14 +760,9 @@ window.onload = function() {
   makeWindowDraggable();
   startLogWatcher();
   startFileWatcher();
-  
-  
   sidebar.classList.add('open');
-  
-  
   updatedLoaded = false;
   renderSidebar();
-  
   if (isElectron) {
     const logWorker = JoinWatcher();
     window.addEventListener('beforeunload', () => {
@@ -816,39 +770,15 @@ window.onload = function() {
       if (fsWatcher) fsWatcher.close();
     });
   }
-  createTab('startup.lua', 'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()');
-  
-  updateStatus("Ready");
-  if (isElectron && ipcRenderer) {
-    ipcRenderer.on('portUpdate', (event, port) => {
-      currentPort = port;
-      console.log("Port updated:", port);
-      updateStatus(`Ready on port ${port}`);
-    });
+  createTab('startup', 'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()');
+  showToast("Ready");
+  const newTabBtn = document.getElementById('new-tab-btn');
+  if (newTabBtn) {
+    newTabBtn.addEventListener('click', () => createTab());
   }
 };
 
 function autoexec() {
-  const watermarkDisabler = "cleardrawcache()"; // NITROGEN MAN I SAY NO
-
-  if (isElectron && ipcRenderer) {
-    try {
-      ipcRenderer.send('invokeAction', watermarkDisabler);
-      ipcRenderer.once('actionReply', (event, result) => {
-        if (result.startsWith('Error:')) {
-          updateStatus("Failed", true);
-        } else {
-          updateStatus("Success");
-          statusElement.style.color = "#2ecc71";
-        }
-        setTimeout(() => {
-          updateStatus(currentPort ? `Ready on port ${currentPort}` : "Ready");
-        }, 3000);
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  }
   let autoExecScripts = loadAutoExecuteScripts();
 
   if (autoExecScripts.length > 0) {
@@ -856,7 +786,7 @@ function autoexec() {
       const script = savedScripts.find(s => s.title === scriptName);
       const code = script ? script.script : `-- Script "${scriptName}" not found`;
       console.log(code)
-      updateStatus("Executing...");
+      showToast("Executing...");
       console.log("Executing:", code);
       if (isElectron && ipcRenderer) {
         try {
@@ -864,20 +794,16 @@ function autoexec() {
           ipcRenderer.once('actionReply', (event, result) => {
             console.log("Result:", result);
             if (result.startsWith('Error:')) {
-              updateStatus("Failed", true);
+              showToast("Failed", true);
               showToast(result, true);
             } else {
-              updateStatus("Success");
-              statusElement.style.color = "#2ecc71";
+              showToast("Success");
             }
-            setTimeout(() => {
-              updateStatus(currentPort ? `Ready on port ${currentPort}` : "Ready");
-            }, 3000);
           });
         } catch (err) {
           console.error("Failed to send to Electron:", err);
           showToast("Error: " + err.message, true);
-          updateStatus("Error", true);
+          showToast("Error", true);
         }
       } else {
         showToast("Executing: " + code.substring(0, 30) + "...");
@@ -982,44 +908,6 @@ document.getElementById('renameInput').addEventListener('keydown', (e) => {
   }
 });
 
-function setupupdatedScriptItem(item, script) {
-  item.onclick = () => {
-    if (script.script) {
-      createTab(script.title + ".txt", script.script);
-    } else if (script._id) {
-      
-      const loadingIndicator = document.createElement('div');
-      loadingIndicator.className = 'loading-indicator';
-      loadingIndicator.textContent = 'Loading...';
-      item.appendChild(loadingIndicator);
-      
-      fetchScriptContent(script._id)
-        .then(content => {
-          if (item.querySelector('.loading-indicator')) {
-            item.querySelector('.loading-indicator').remove();
-          }
-          
-          if (content) {
-            createTab(script.title + ".txt", content);
-          } else {
-            showToast("Couldn't load script content", true);
-          }
-        })
-        .catch(err => {
-          if (item.querySelector('.loading-indicator')) {
-            item.querySelector('.loading-indicator').remove();
-          }
-          
-          showToast("Error: " + err.message, true);
-        });
-    } else {
-      showToast("Script ID not available", true);
-    }
-  };
-  
-  return item;
-}
-
 
 let fsWatcher = null;
 
@@ -1053,8 +941,8 @@ function createBadge(text, className) {
   badge.style.padding = '2px 6px';
   badge.style.borderRadius = '4px';
   badge.style.fontSize = '11px';
-  badge.style.background = '#222';
-  badge.style.color = '#fff';
+  badge.style.background = '#3B4252'; // nord1
+  badge.style.color = '#D8DEE9'; // nord4
   badge.style.display = 'inline-block';
   return badge;
 }
@@ -1077,18 +965,16 @@ function createDiscordBadge(url) {
   badge.style.padding = '2px 6px';
   badge.style.borderRadius = '4px';
   badge.style.fontSize = '11px';
-  badge.style.background = 'rgba(86,101,242,0.18)';
-  badge.style.color = '#b3b8ff';
+  badge.style.background = 'rgba(67,76,94,0.18)'; // nord2
+  badge.style.color = '#8FBCBB'; // nord7
   badge.style.cursor = 'pointer';
   badge.style.fontFamily = 'inherit';
   badge.onclick = (e) => {
     e.stopPropagation();
     if (window && window.process && window.process.type === 'renderer') {
-      
       try {
         require('electron').shell.openExternal(url);
       } catch (err) {
-        
         window.open(url, '_blank');
       }
     } else {
@@ -1211,12 +1097,12 @@ async function renderScriptItem(script, source) {
   
   item.onclick = () => {
     if (script.script) {
-      createTab(script.title + '.txt', script.script);
+      createTab(script.title, script.script);
     } else if (script.rawScript) {
       fetch(script.rawScript)
         .then(res => res.text())
-        .then(text => createTab(script.title + '.txt', text))
-        .catch(() => createTab(script.title + '.txt', '-- Error loading script'));
+        .then(text => createTab(script.title, text))
+        .catch(() => createTab(script.title, '-- Error loading script'));
     } else if (script._id) {
       const loadingIndicator = document.createElement('div');
       loadingIndicator.className = 'loading-indicator';
@@ -1228,7 +1114,7 @@ async function renderScriptItem(script, source) {
             item.querySelector('.loading-indicator').remove();
           }
           if (content) {
-            createTab(script.title + '.txt', content);
+            createTab(script.title, content);
           } else {
             showToast("Couldn't load script content", true);
           }
@@ -1244,4 +1130,37 @@ async function renderScriptItem(script, source) {
     }
   };
   return item;
+}
+
+async function executeCurrentScript() {
+  if (!currentTab || !editors[currentTab]) {
+    showToast("No script selected", true);
+    return;
+  }
+  const code = editors[currentTab].getValue();
+  showToast("Executing...");
+  console.log("Executing:", code);
+  if (isElectron && ipcRenderer) {
+    try {
+      ipcRenderer.send('invokeAction', { code });
+      ipcRenderer.once('actionReply', (event, result) => {
+        console.log("Result:", result);
+        if (result.startsWith('Error:')) {
+          showToast("Failed", true);
+          showToast(result, true);
+        } else {
+          showToast("Success");
+        }
+      });
+    } catch (err) {
+      console.error("Failed to send to Electron:", err);
+      showToast("Error: " + err.message, true);
+      showToast("Error", true);
+    }
+  } else {
+    showToast("Executing: " + code.substring(0, 30) + "...");
+    setTimeout(() => {
+      showToast("Success");
+    }, 500);
+  }
 }

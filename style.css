@@ -2,8 +2,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Fira Code', monospace;
-  background-color: #18181c;
-  color: #d4d4d4;
+  background-color: #181A1B;
+  color: #E0E0E0;
   height: 100vh;
   overflow: hidden;
   display: flex;
@@ -20,46 +20,43 @@ body::-webkit-scrollbar,
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1px;
 }
 
 .tabs {
-  background-color: transparent;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 0 8px;
-  border-radius: 0;
-  box-shadow: none;
-  margin-bottom: 12px;
-  margin-top: 20px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .tab {
-  background: linear-gradient(to right, #252526 0%, #1e1e1e 100%);
+  background: linear-gradient(to right, #232629 0%, #232629 100%);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  border: 1px solid #18181c;
+  border: 1px solid #181A1B;
   margin: 0 4px;
-  padding: 0 18px;
+  padding: 0 12px;
   height: 38px;
   min-width: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 15px;
-  color: #d4d4d4;
+  color: #E0E0E0;
   cursor: pointer;
-  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
   position: relative;
   flex: none;
 }
 
 .tab.active {
-  background: linear-gradient(to right, #18181c 0%, #252526 100%);
-  color: #569CD6;
-  box-shadow: 0 4px 16px #569CD633;
-  border: 1.5px solid #569CD6;
+  background: linear-gradient(to right, #181A1B 0%, #232629 100%);
+  color: #7FB4FF;
+  border: 1.5px solid #7FB4FF;
 }
 
 .tab .close-btn {
@@ -71,9 +68,8 @@ body::-webkit-scrollbar,
 }
 
 .tab:hover {
-  box-shadow: 0 4px 16px #569CD633;
-  background: linear-gradient(to right, #1e1e1e 0%, #161616 100%);
-  color: #569CD6;
+  background: linear-gradient(to right, #232629 0%, #181A1B 100%);
+  color: #7FB4FF;
 }
 
 .tab:hover .close-btn { 
@@ -83,22 +79,20 @@ body::-webkit-scrollbar,
 .sidebar {
   width: 0;
   transition: width 0.3s;
-  background: #0e0e0e;
+  background: #232629;
   border-radius: 20px;
-  border: 1px solid #18181c;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   margin: 8px;
+  z-index: 20;
 }
 
 .sidebar.open {
   width: 300px;
   border-radius: 20px;
-  background: #0e0e0e;
-  border: 1px solid #18181c;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  background: #232629;
+  border: 1px solid #181A1B;
 }
 
 .sidebar input {
@@ -106,21 +100,18 @@ body::-webkit-scrollbar,
   padding: 0 18px;
   height: 38px;
   border-radius: 16px;
-  border: 1.5px solid #18181c;
+  border: 1.5px solid #232629;
   outline: none;
-  background: #18181c;
-  color: #d4d4d4;
+  background: #181A1B;
+  color: #E0E0E0;
   font-family: 'Fira Code', monospace;
   font-size: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
 }
 
 .sidebar input:focus {
-  border: 1.5px solid #569CD6;
-  background: linear-gradient(to right, #18181c 0%, #252526 100%);
-  color: #569CD6;
-  box-shadow: 0 4px 16px #569CD633;
+  border: 1.5px solid #7FB4FF;
+  background: linear-gradient(to right, #181A1B 0%, #232629 100%);
+  color: #7FB4FF;
 }
 
 .sidebar .scripts {
@@ -130,25 +121,24 @@ body::-webkit-scrollbar,
 
 .script-item {
   padding: 10px 15px;
-  border-bottom: 1px solid #18181c;
+  border-bottom: 1px solid #2E3440;
   cursor: pointer;
   font-size: 14px;
-  color: #ccc;
+  color: #E5E9F0;
   position: relative;
 }
 
 .script-item:hover {
-  background: #18181c;
+  background: #2E3440;
 }
 
 .editor-container {
   flex: 1;
-  background-color: #18181c;
+  background-color: #181A1B;
   position: relative;
   overflow: hidden;
   border-radius: 0 0 16px 16px;
   margin: 8px 8px 0 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 .editor-wrapper {
@@ -157,8 +147,6 @@ body::-webkit-scrollbar,
   display: none;
   overflow: auto;
   position: absolute;
-  border-radius: 16px;
-  margin: 0;
 }
 
 .editor-wrapper.active {
@@ -166,11 +154,11 @@ body::-webkit-scrollbar,
 }
 
 .CodeMirror-gutters {
-  background-color: #18181c !important;
+  background-color: #181A1B !important;
 }
 
 .CodeMirror-linenumber {
-  background-color: #18181c !important;
+  background-color: #181A1B !important;
 }
 
 .script-item {
@@ -180,8 +168,9 @@ body::-webkit-scrollbar,
   margin: 8px;
   padding: 15px;
   transition: all 0.3s ease;
-  border: 1px solid #18181c;
+  border: 1px solid #3B4252;
 }
+
 .script-item.searched-script {
   background-size: cover;
   background-position: center;
@@ -195,9 +184,9 @@ body::-webkit-scrollbar,
   right: 0;
   bottom: 0;
   background: linear-gradient(to bottom, 
-    rgba(0, 0, 0, 0.7) 0%, 
-    rgba(0, 0, 0, 0.8) 50%,
-    rgba(0, 0, 0, 0.9) 100%);
+    rgba(46, 52, 64, 0.7) 0%, 
+    rgba(46, 52, 64, 0.8) 50%,
+    rgba(46, 52, 64, 0.9) 100%);
   z-index: 0;
 }
 
@@ -213,21 +202,21 @@ body::-webkit-scrollbar,
   left: 0;
   right: 0;
   bottom: 0;
-  background: #18181c;
+  background: #2E3440;
   border-radius: 8px;
   z-index: 0;
 }
 
 .saved-script:hover::before {
-  background: linear-gradient(to right, rgba(37, 37, 38, 0.7) 0%, rgba(37, 37, 38, 0.5) 50%, rgba(37, 37, 38, 0.3) 100%);
+  background: linear-gradient(to right, rgba(59, 66, 82, 0.7) 0%, rgba(59, 66, 82, 0.5) 50%, rgba(59, 66, 82, 0.3) 100%);
 }
 
 .searched-script {
-  background: linear-gradient(to right, #252526 0%, #1e1e1e 100%);
+  background: linear-gradient(to right, #3B4252 0%, #434C5E 100%);
 }
 
 .searched-script:hover {
-  background: linear-gradient(to right, #1e1e1e 0%, #161616 100%);
+  background: linear-gradient(to right, #434C5E 0%, #3B4252 100%);
 }
 
 .script-content {
@@ -243,13 +232,13 @@ body::-webkit-scrollbar,
 
 .script-game {
   font-size: 13px;
-  color: #aaa;
+  color: #E5E9F0;
   margin-bottom: 3px;
 }
 
 .script-description {
   font-size: 12px;
-  color: #888;
+  color: #D8DEE9;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -262,12 +251,12 @@ body::-webkit-scrollbar,
   margin-top: 8px;
   margin-bottom: 16px;
   font-size: 11px;
-  color: #666;
+  color: #4C566A;
   gap: 8px;
 }
 
 .script-verified {
-  color: #2ecc71;
+  color: #569CD6;
 }
 
 .script-patched {
@@ -275,14 +264,15 @@ body::-webkit-scrollbar,
 }
 
 .script-universal {
-  color: #3498db;
+  color: #569CD6;
 }
 
 .script-key {
-  color: #f39c12;
+  color: #569CD6;
 }
+
 .CodeMirror-linenumber:hover {
-  color: #7daf7d !important;
+  color: #569CD6 !important;
 }
 
 .CodeMirror {
@@ -291,24 +281,23 @@ body::-webkit-scrollbar,
   font-family: 'Fira Code', monospace !important;
   font-size: 15px !important;
   line-height: 1.5 !important;
-  color: #d4d4d4 !important;
-  background-color: #18181c !important;
+  color: #E0E0E0 !important;
+  background-color: #181A1B !important;
 }
 
 .tooltip {
   position: absolute;
-  background: #18181c;
-  color: #ccc;
+  background: #3B4252;
+  color: #E5E9F0;
   padding: 8px 12px;
   border-radius: 5px;
   font-size: 14px;
   display: none;
   z-index: 20;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 footer {
-  background-color: #0e0e0e;
+  background-color: #232629;
   height: 80px;
   display: flex;
   justify-content: flex-end;
@@ -322,14 +311,14 @@ footer {
   bottom: auto;
   box-sizing: border-box;
   border-radius: 20px;
-  border: 1px solid #18181c;
+  border: 1px solid #181A1B;
   border-top: none;
   margin: 0 8px 8px 8px;
 }
 
 .button, .exec-button {
-  background-color: black;
-  color: white;
+  background-color: #202326;
+  color: #E0E0E0;
   padding: 10px;
   border: none;
   border-radius: 16px !important;
@@ -344,14 +333,14 @@ footer {
   margin-left: 10px;
   height: 50px;
   position: relative;
-  z-index: 11;
+  z-index: 15;
   min-width: 50px;
   box-sizing: border-box;
 }
 
 .exec-button {
-  background-color: #569CD6;
-  box-shadow: 0 0 10px #569CD6, 0 0 20px #569CD6, 0 0 30px #569CD6;
+  background-color: #7FB4FF;
+  box-shadow: 0 0 10px #7FB4FF, 0 0 20px #7FB4FF, 0 0 30px #7FB4FF;
   transition: box-shadow 0.3s ease;
   border-radius: 50%;
   width: 50px;
@@ -359,14 +348,12 @@ footer {
   flex-shrink: 0;
 }
 
-.button:hover {
-  box-shadow: 0 0 15px #569CD6, 0 0 20px #569CD6, 0 0 30px #569CD6;
-  background-color: #569CD6;
+.exec-button:hover {
+  box-shadow: 0 0 20px #7FB4FF, 0 0 30px #7FB4FF, 0 0 40px #7FB4FF;
 }
 
-.exec-button:hover {
-  box-shadow: 0 0 15px #569CD6, 0 0 30px #569CD6, 0 0 40px #569CD6;
-  background-color: #569CD6;
+.button:hover {
+  background-color: #6494d7;
 }
 
 .button i {
@@ -379,17 +366,25 @@ footer {
   margin-right: 10px;
 }
 
-.save-button {
-  margin-right: 10px;
+.button.save-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 50px;
+  height: 50px;
 }
 
-.roblox-button {
-  margin-right: 10px;
+.button.save-button i {
+  margin: 0;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #status {
-  background: #18181c;
-  color: #569CD6;
+  color: #7FB4FF;
   padding: 4px 8px;
   border-radius: 3px;
   margin-right: auto;
@@ -403,8 +398,8 @@ footer {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #2ecc71;
-  color: white;
+  background-color: #349d5e;
+  color: #fffdfd;
   padding: 10px 20px;
   border-radius: 4px;
   opacity: 0;
@@ -418,25 +413,25 @@ footer {
 }
 
 .toast.error {
-  background-color: #e74c3c;
+  background-color: #ed6e6e;
 }
 
 .CodeMirror-hints {
   font-family: 'Fira Code', monospace !important;
   font-size: 14px !important;
-  background-color: #161616 !important;
-  color: #d4d4d4 !important;
+  background-color: #232629 !important;
+  color: #E0E0E0 !important;
 }
+
 .CodeMirror-hint {
-  color: #d4d4d4 !important;
+  color: #E0E0E0 !important;
 }
 
 .context-menu {
   position: absolute;
-  background-color: #252526;
-  border: 1px solid #18181c;
+  background-color: #232629;
+  border: 1px solid #181A1B;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   min-width: 150px;
   display: none;
@@ -444,18 +439,18 @@ footer {
 
 .context-menu-item {
   padding: 8px 12px;
-  color: #d4d4d4;
+  color: #E0E0E0;
   cursor: pointer;
   font-size: 15px;
 }
 
 .context-menu-item:hover {
-  background-color: #01000a;
+  background-color: #232629;
 }
 
 .context-menu-separator {
   height: 1px;
-  background-color: #18181c;
+  background-color: #2E3440;
   margin: 4px 0;
 }
 
@@ -472,15 +467,13 @@ footer {
 }
 
 .console-container {
-  height: 220px;
-  background-color: #0e0e0e;
+  height: 240px;
+  background-color: #181A1B;
   border-radius: 20px;
-  margin: 0 8px 0 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  margin: 0 8px 8px 8px;
   display: flex;
   flex-direction: column;
-  border: 1px solid #18181c;
-  border-bottom: none;
+  border: 1px solid #232629;
   overflow: hidden;
   position: static;
   left: auto;
@@ -490,13 +483,51 @@ footer {
 }
 
 .console-header {
-  background-color: #0e0e0e;
-  padding: 5px 10px;
-  font-size: 15px;
-  color: #569CD6;
+  background-color: #181A1B;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #7FB4FF;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.console-header i {
+  margin-right: 8px;
+  color: #7FB4FF;
+}
+
+.console-btn {
+  background: #202326;
+  color: #E0E0E0;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.console-btn i {
+  font-size: 18px;
+  margin: 0;
+  line-height: 1;
+}
+
+.console-btn:hover {
+  background: #7FB4FF;
+  color: #ffffff;
+  box-shadow: 0 0 10px #7FB4FF;
+}
+
+.console-btn:hover i {
+  color: #ffffff;
 }
 
 ::-webkit-scrollbar {
@@ -512,28 +543,29 @@ footer {
   font-size: 15px;
   font-family: 'Fira Code', monospace;
   white-space: pre-wrap;
+  color: #E0E0E0;
 }
 
 .console-clear {
   cursor: pointer;
-  color: #ccc;
+  color: #E0E0E0;
   font-size: 15px;
 }
 
 .console-clear:hover {
-  color: #fff;
+  color: #FFFFFF;
 }
 
 .log-error {
-  color: #e74c3c;
+  color: #FF6F6F;
 }
 
 .log-warning {
-  color: #f39c12;
+  color: #FFD166;
 }
 
 .log-info {
-  color: #3498db;
+  color: #7FB4FF;
 }
 
 .log-success {
@@ -575,7 +607,7 @@ footer {
   padding: 10px 15px;
   font-weight: bold;
   color: #569CD6;
-  background-color: #0e0e0e;
+  background-color: #232629;
 }
 
 .rename-dialog {
@@ -585,17 +617,16 @@ footer {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(46, 52, 64, 0.7);
   z-index: 1000;
   justify-content: center;
   align-items: center;
 }
 
 .rename-content {
-  background-color: #252526;
+  background-color: #3B4252;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   width: 400px;
   max-width: 90%;
 }
@@ -610,9 +641,9 @@ footer {
   width: 100%;
   padding: 10px;
   margin: 15px 0;
-  background-color: #1e1e1e;
-  border: 1px solid #18181c;
-  color: #d4d4d4;
+  background-color: #434C5E;
+  border: 1px solid #2E3440;
+  color: #D8DEE9;
   font-family: 'Fira Code', monospace;
   box-sizing: border-box;
 }
@@ -629,20 +660,20 @@ footer {
 
 .rename-buttons button {
   padding: 8px 15px;
-  background-color: #1e1e1e;
-  border: 1px solid #18181c;
-  color: #d4d4d4;
+  background-color: #434C5E;
+  border: 1px solid #2E3440;
+  color: #D8DEE9;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .rename-buttons button:hover {
-  background-color: #18181c;
+  background-color: #3B4252;
 }
 
 #confirmRename {
   background-color: #569CD6;
-  color: white;
+  color: #ECEFF4;
 }
 
 #confirmRename:hover {
@@ -651,7 +682,7 @@ footer {
 
 .script-source {
   font-size: 12px;
-  color: #aaa;
+  color: #E5E9F0;
   margin-top: 2px;
   margin-bottom: 2px;
 }
@@ -663,26 +694,124 @@ footer {
   border-radius: 4px;
   font-size: 11px;
   font-family: inherit;
-  background: rgba(86,101,242,0.18);
-  color: #b3b8ff;
+  background: #3B4252;
+  color: #569CD6;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   user-select: none;
   z-index: 2;
   position: relative;
 }
+
 .script-discord:hover {
-  background: #5865F2 !important;
-  color: #fff !important;
-  z-index: 3;
+  background: #569CD6 !important;
+  color: #ECEFF4 !important;
 }
 
 .script-stats {
   margin-top: 0;
   margin-bottom: 0;
   font-size: 12px;
-  color: #cfcfcf;
+  color: #ECEFF4;
   display: flex;
   gap: 12px;
 }
 
+.tabs-bar {
+  margin-left: 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-bottom: 12px;
+  margin-top: 20px;
+  flex-wrap: nowrap;
+  padding: 0;
+}
+
+.add-tab-btn {
+  background: #232629;
+  border: 1.5px solid #232629;
+  color: #E0E0E0;
+  border-radius: 16px;
+  width: 50px;
+  height: 38px;
+  min-width: 50px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-left: 0 !important;
+  margin-right: 10px;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+  font-family: 'Fira Code', monospace;
+  flex: none;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.add-tab-btn:hover {
+  background: #232629;
+  color: #7FB4FF;
+  border: 1.5px solid #7FB4FF;
+}
+
+.cm-s-nord.CodeMirror {
+  background: #181A1B !important;
+  color: #E0E0E0 !important;
+}
+
+.cm-s-nord .CodeMirror-gutters {
+  background: #181A1B !important;
+  border-right: 1px solid #232629 !important;
+}
+
+.cm-s-nord .CodeMirror-linenumber {
+  color: #4C566A !important;
+}
+
+.cm-s-nord .CodeMirror-cursor {
+  border-left: 2px solid #7FB4FF !important;
+}
+
+.cm-s-nord .CodeMirror-selected {
+  background: #232629 !important;
+}
+
+.cm-s-nord .CodeMirror-line::selection, 
+.cm-s-nord .CodeMirror-line > span::selection, 
+.cm-s-nord .CodeMirror-line > span > span::selection {
+  background: #232629 !important;
+}
+
+.cm-s-nord .CodeMirror-line::-moz-selection, 
+.cm-s-nord .CodeMirror-line > span::-moz-selection, 
+.cm-s-nord .CodeMirror-line > span > span::-moz-selection {
+  background: #232629 !important;
+}
+
+.cm-s-nord .CodeMirror-matchingbracket {
+  color: #7FB4FF !important;
+  background: #232629 !important;
+  font-weight: bold;
+}
+
+.cm-s-nord .CodeMirror-activeline-background {
+  background: #232629 !important;
+}
+
+.cm-s-nord .CodeMirror-hints {
+  background: #232629 !important;
+  color: #E0E0E0 !important;
+}
+
+.cm-s-nord .CodeMirror-hint-active {
+  background: #232629 !important;
+  color: #7FB4FF !important;
+}
