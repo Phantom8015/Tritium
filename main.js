@@ -1,6 +1,5 @@
 const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron/') > -1;
 let ipcRenderer;
-let currentPort = null;
 if (isElectron) {
   try {
     ipcRenderer = require('electron').ipcRenderer;
@@ -24,6 +23,12 @@ const { spawn } = require('child_process');
 const path = require('path');
 const consoleOutput = document.getElementById('consoleOutput');
 const clearConsoleBtn = document.getElementById('clearConsole');
+const settingsButton = document.getElementById('settings-button');
+const settingsPane = document.getElementById('settingsPane');
+const closeSettingsBtn = document.getElementById('closeSettings');
+const glowModeSelect = document.getElementById('glowMode');
+const resetGlowBtn = document.getElementById('resetGlow');
+const resetColorBtn = document.getElementById('resetColor');
 let editors = {};
 let savedScripts = [];
 let currentTab = null;
@@ -103,11 +108,20 @@ function JoinWatcher() {
   });
 }
 
+let toastTimeout = null;
 function showToast(message, isError = false) {
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+    toastTimeout = null;
+  }
   toast.textContent = message;
   toast.className = isError ? 'toast error show' : 'toast show';
-  setTimeout(() => {
+  toastTimeout = setTimeout(() => {
     toast.className = 'toast';
+    setTimeout(() => {
+      toast.textContent = '';
+    }, 300);
+    toastTimeout = null;
   }, 3000);
 }
 
@@ -167,6 +181,56 @@ function createEditor(tabId, content) {
   return editor;
 }
 
+
+function setLocalStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.error(`Error saving ${key}:`, err);
+  }
+}
+
+function getLocalStorage(key, fallback) {
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : fallback;
+  } catch (err) {
+    console.error(`Error loading ${key}:`, err);
+    return fallback;
+  }
+}
+
+function updateTabDisplayName(tab, newName) {
+  let displayName = newName;
+  if (newName.length > 15) displayName = newName.substring(0, 10) + '...';
+  tab.dataset.name = displayName;
+  tab.querySelector('span').textContent = displayName;
+}
+
+function updateScriptNameEverywhere(originalName, newName) {
+  const scriptIndex = savedScripts.findIndex(s => s.title === originalName);
+  if (scriptIndex !== -1) {
+    savedScripts[scriptIndex].title = newName;
+    let autoExecScripts = getLocalStorage('autoExecuteScripts', []);
+    const autoExecIndex = autoExecScripts.indexOf(originalName);
+    if (autoExecIndex !== -1) {
+      autoExecScripts[autoExecIndex] = newName;
+      setLocalStorage('autoExecuteScripts', autoExecScripts);
+    }
+    setLocalStorage('savedScripts', savedScripts);
+    const filePath = path.join(scriptsDirectory, `${originalName}.txt`);
+    const newFilePath = path.join(scriptsDirectory, `${newName}.txt`);
+    fs.renameSync(filePath, newFilePath);
+    showToast(`Script renamed to "${newName}"`);
+    Array.from(tabs.children).forEach(tab => {
+      if (tab.dataset.realTabName === originalName) {
+        tab.dataset.realTabName = newName;
+        updateTabDisplayName(tab, newName);
+      }
+    });
+  }
+}
+
 function loadSavedScripts() {
   savedScripts = [];
   try {
@@ -176,12 +240,8 @@ function loadSavedScripts() {
         if (file.endsWith('.txt')) {
           const filePath = path.join(scriptsDirectory, file);
           const content = fs.readFileSync(filePath, 'utf8');
-          let scriptName = file.replace('.txt', '');
-          scriptName = scriptName.split('.')[0];
-          savedScripts.push({
-            title: scriptName,
-            script: content
-          });
+          let scriptName = file.replace('.txt', '').split('.')[0];
+          savedScripts.push({ title: scriptName, script: content });
         }
       });
     }
@@ -191,50 +251,19 @@ function loadSavedScripts() {
   }
 }
 
-function persistSavedScripts() {
-  try {
-    localStorage.setItem('savedScripts', JSON.stringify(savedScripts));
-  } catch (err) {
-    console.error("Error saving scripts:", err);
-  }
-}
-
-function loadAutoExecuteScripts() {
-  try {
-    const autoExecScripts = localStorage.getItem('autoExecuteScripts');
-    return autoExecScripts ? JSON.parse(autoExecScripts) : [];
-  } catch (err) {
-    console.error("Error loading autoexecute scripts:", err);
-    return [];
-  }
-}
-
-function saveAutoExecuteScripts(scripts) {
-  try {
-    localStorage.setItem('autoExecuteScripts', JSON.stringify(scripts));
-  } catch (err) {
-    console.error("Error saving autoexecute scripts:", err);
-  }
-}
-
-function isAutoExecuteScript(scriptName) {
-  const autoExecScripts = loadAutoExecuteScripts();
-  return autoExecScripts.includes(scriptName);
-}
-
+function persistSavedScripts() { setLocalStorage('savedScripts', savedScripts); }
+function loadAutoExecuteScripts() { return getLocalStorage('autoExecuteScripts', []); }
+function saveAutoExecuteScripts(scripts) { setLocalStorage('autoExecuteScripts', scripts); }
+function isAutoExecuteScript(scriptName) { return loadAutoExecuteScripts().includes(scriptName); }
 function toggleAutoExecuteScript(scriptName) {
   const autoExecScripts = loadAutoExecuteScripts();
   const index = autoExecScripts.indexOf(scriptName);
-  if (index === -1) {
-    autoExecScripts.push(scriptName);
-  } else {
-    autoExecScripts.splice(index, 1);
-  }
+  if (index === -1) autoExecScripts.push(scriptName);
+  else autoExecScripts.splice(index, 1);
   saveAutoExecuteScripts(autoExecScripts);
   updateAutoExecuteCheckbox(scriptName);
   renderSidebar();
 }
-
 function updateAutoExecuteCheckbox(scriptName) {
   autoExecuteCheckbox.style.display = isAutoExecuteScript(scriptName) ? 'inline' : 'none';
 }
@@ -254,91 +283,51 @@ document.addEventListener('click', () => {
 
 renameScriptBtn.addEventListener('click', () => {
   if (!currentContextScript) return;
-  
   const scriptItem = Array.from(document.querySelectorAll('.script-item')).find(item => {
     return item.querySelector('.script-title').textContent === currentContextScript;
   });
-  
   if (!scriptItem) return;
-  
   const titleElement = scriptItem.querySelector('.script-title');
   const originalName = titleElement.textContent;
-  
-  
   const input = document.createElement('input');
   input.type = 'text';
   input.value = originalName;
-  input.style.width = '100%';
-  input.style.background = 'transparent';
-  input.style.border = '1px solid #569CD6';
-  input.style.color = '#d4d4d4';
-  input.style.padding = '2px';
-  input.style.fontFamily = 'inherit';
-  
-  
+  input.className = 'rename-input';
   titleElement.replaceWith(input);
   input.focus();
-  
   function handleRename() {
     const newName = input.value.trim().split('.')[0];
-    
-    
-    if (newName && newName !== originalName) {
-      const scriptIndex = savedScripts.findIndex(s => s.title === originalName);
-      if (scriptIndex !== -1) {
-        savedScripts[scriptIndex].title = newName;
-        
-        
-        const autoExecScripts = loadAutoExecuteScripts();
-        const autoExecIndex = autoExecScripts.indexOf(originalName);
-        if (autoExecIndex !== -1) {
-          autoExecScripts[autoExecIndex] = newName;
-          saveAutoExecuteScripts(autoExecScripts);
-        }
-        
-        persistSavedScripts();
-        const filePath = path.join(scriptsDirectory, `${originalName}.txt`);
-        const newFilePath = path.join(scriptsDirectory, `${newName}.txt`);
-        fs.renameSync(filePath, newFilePath);
-        
-        showToast(`Script renamed to "${newName}"`);
-      }
+    if (newName === 'Untitled') {
+      showToast("Script name cannot be 'Untitled'", true);
+      input.focus();
+      return;
     }
-    
+    if (newName && newName !== originalName) {
+      updateScriptNameEverywhere(originalName, newName);
+    }
     titleElement.textContent = newName || originalName;
     input.replaceWith(titleElement);
-    if (tabs.children.length > 0) {
-      for (let i = 0; i < tabs.children.length; i++) {
-        const tab = tabs.children[i];
-        if (tab.dataset.realTabName === originalName) {
-          tab.dataset.realTabName = newName;
-          let displayName = newName;
-          if (newName.length > 15) {
-            displayName = newName.substring(0, 10) + '...';
-          }
-          tab.dataset.name = displayName;
-          tab.querySelector('span').textContent = displayName;
-        }
-      }
-    }
   }
-  
   input.addEventListener('blur', handleRename);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const newName = input.value.trim();
+      if (newName === 'Untitled') {
+        showToast("Script name cannot be 'Untitled'", true);
+        input.focus();
+        return;
+      }
       if (savedScripts.some(s => s.title === newName)) {
         showToast(`Script "${newName}" already exists`, true);
         input.focus();
         return;
-      } 
+      }
       handleRename();
     } else if (e.key === 'Escape') {
       input.value = originalName;
       input.blur();
     }
   });
-  
   contextMenu.style.display = 'none';
 });
 deleteScriptBtn.addEventListener('click', () => {
@@ -349,14 +338,17 @@ deleteScriptBtn.addEventListener('click', () => {
       if (isAutoExecuteScript(currentContextScript)) {
         toggleAutoExecuteScript(currentContextScript);
       }
-      
-      
-      const filePath = path.join(scriptsDirectory, `${currentContextScript}`);
+      const filePath = path.join(scriptsDirectory, `${currentContextScript}.txt`);
       try {
         fs.unlinkSync(filePath);
         savedScripts.splice(scriptIndex, 1);
         persistSavedScripts();
         renderSidebar();
+        showToast(`Script "${currentContextScript}" deleted`);
+        const tabsToClose = Array.from(tabs.children).filter(tab => tab.dataset.realTabName === currentContextScript);
+        tabsToClose.forEach(tab => {
+          closeTab(tab.dataset.id);
+        });
         showToast(`Script "${currentContextScript}" deleted`);
       } catch (err) {
         showToast(`Error deleting script: ${err.message}`, true);
@@ -400,6 +392,11 @@ function createTab(name = "Untitled", content = "-- New script") {
   tab.appendChild(closeBtn);
   tab.dataset.id = id;
   tab.dataset.name = name;
+
+  if (realTabName !== 'Untitled' && savedScripts.some(s => s.title === realTabName)) {
+    tab.classList.add('saved-tab');
+  }
+
   tabs.appendChild(tab);
   const editor = createEditor(id, content);
   editors[id] = editor;
@@ -468,20 +465,17 @@ function saveCurrentScript() {
   let scriptName = tab.dataset.realTabName;
   console.log(scriptName);
   if (scriptName === "Untitled") {
-    const renameDialog = document.getElementById('renameDialog');
-    renameDialog.style.display = 'flex';
-    const renameInput = document.getElementById('renameInput');
-    renameInput.value = '';
-    renameInput.focus();
+    openRenameDialog();
     return;
   }
   scriptName = scriptName.split('.')[0];
   saveScriptContent(tab, scriptName);
+  
 }
 
 function saveScriptContent(tab, scriptName) {
-  if (!scriptName) {
-    showToast("Script name is required", true);
+  if (!scriptName || scriptName === 'Untitled') {
+    showToast("Script name is required and cannot be 'Untitled'", true);
     return;
   }
   if (!scriptName.endsWith('.txt')) {
@@ -521,15 +515,9 @@ function saveScriptContent(tab, scriptName) {
       
       
       showToast(`Script "${scriptName.replace('.txt', '')}" saved successfully!`);
-      
-      const tabNameElement = tab.querySelector('span');
-      if (tabNameElement) {
-        tabNameElement.textContent = scriptName.replace('.txt', '');
-      }
-      
-      
+      closeCurrentTab();
       loadSavedScripts();
-      
+      createTab(scriptName.replace('.txt', ''), scriptContent);
       
       if (sidebar.classList.contains('open') && !searchBox.value) {
         renderSidebar();
@@ -551,6 +539,7 @@ function saveScriptContent(tab, scriptName) {
       }
     }
   });
+  
 }
 
 document.getElementById('copyConsole').onclick = function() {
@@ -576,9 +565,6 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     saveCurrentScript();
   }
-});
-document.getElementById('toggleSidebar').addEventListener('click', () => {
-  sidebar.classList.toggle('open');
 });
 
 function launchRoblox() {
@@ -816,9 +802,8 @@ async function renderSidebar() {
   scriptsList.innerHTML = '';
   const savedCategory = document.createElement('div');
   savedCategory.className = 'sidebar-category';
-  savedCategory.textContent = 'Saved Scripts';
+  savedCategory.textContent = 'Saved scripts';
   scriptsList.appendChild(savedCategory);
-  loadSavedScripts();
   if (savedScripts.length === 0) {
     const noScripts = document.createElement('div');
     noScripts.className = 'script-item';
@@ -860,54 +845,108 @@ async function renderSidebar() {
         scriptsList.appendChild(item);
       }
     } else {
-      const loadingItem = document.createElement('div');
-      loadingItem.className = 'script-item';
-      loadingItem.textContent = 'Loading updated scripts...';
-      scriptsList.appendChild(loadingItem);
       loadupdated();
     }
   }
 }
 
-document.getElementById('confirmRename').addEventListener('click', () => {
-  const newName = document.getElementById('renameInput').value.trim();
-  
-  if (!newName) {
-    showToast("Script name is required", true);
-    return;
-  }
-  
-  if (savedScripts.some(s => s.title === newName)) {
-    showToast(`Script "${newName}" already exists`, true);
-    return;
-  }
-  
-  const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
-  tab.dataset.name = newName;
-  tab.dataset.realTabName = newName;
-  
-  const tabNameElement = tab.querySelector('span');
-  if (tabNameElement) {
-    tabNameElement.textContent = newName;
-  }
-  
-  saveScriptContent(tab, newName);
-  
-  document.getElementById('renameDialog').style.display = 'none';
+function getSettings() {
+  return {
+    glowMode: localStorage.getItem('glowMode') || 'default',
+    accentColor: localStorage.getItem('accentColor') || '#7FB4FF',
+  };
+}
+
+function applySettings() {
+  const { glowMode, accentColor } = getSettings();
+  document.body.classList.remove('glow-none', 'glow-default', 'glow-high');
+  document.body.classList.add('glow-' + glowMode);
+  document.documentElement.style.setProperty('--accent-color', accentColor);
+  glowModeSelect.value = glowMode;
+}
+
+function saveSettings() {
+  localStorage.setItem('glowMode', glowModeSelect.value);
+  applySettings();
+}
+
+glowModeSelect.addEventListener('change', saveSettings);
+
+resetGlowBtn.addEventListener('click', () => {
+  glowModeSelect.value = 'default';
+  saveSettings();
+});
+resetColorBtn.addEventListener('click', () => {
+  localStorage.setItem('accentColor', '#7FB4FF');
+  accentColorInput.value = '7FB4FF';
+  updateAccentColorPreview('7FB4FF');
+  applySettings();
 });
 
-document.getElementById('cancelRename').addEventListener('click', () => {
-  document.getElementById('renameDialog').style.display = 'none';
+settingsButton.addEventListener('click', () => {
+  settingsPane.style.display = '';
+  settingsPane.classList.remove('closing');
+  settingsPane.classList.add('open');
+  applySettings();
 });
-
-document.getElementById('renameInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    document.getElementById('confirmRename').click();
-  } else if (e.key === 'Escape') {
-    document.getElementById('cancelRename').click();
+closeSettingsBtn.addEventListener('click', () => {
+  settingsPane.classList.remove('open');
+  settingsPane.classList.add('closing');
+  setTimeout(() => {
+    settingsPane.classList.remove('closing');
+    settingsPane.style.display = 'none';
+  }, 350);
+});
+settingsPane.addEventListener('click', (e) => {
+  if (e.target === settingsPane) {
+    settingsPane.classList.remove('open');
+    settingsPane.classList.add('closing');
+    setTimeout(() => {
+      settingsPane.classList.remove('closing');
+      settingsPane.style.display = 'none';
+    }, 350);
   }
 });
 
+document.addEventListener('DOMContentLoaded', applySettings);
+window.addEventListener('load', applySettings);
+
+
+const accentColorPaletteBtn = document.getElementById('accentColorPalette');
+if (accentColorPaletteBtn) {
+  function showPaletteBtnOpen() {
+    accentColorPaletteBtn.classList.add('open');
+    if (accentColorPaletteBtn._openTimeout) clearTimeout(accentColorPaletteBtn._openTimeout);
+    accentColorPaletteBtn._openTimeout = setTimeout(() => {
+      accentColorPaletteBtn.classList.remove('open');
+      accentColorPaletteBtn._openTimeout = null;
+    }, 1500);
+  }
+  accentColorPaletteBtn.addEventListener('mousedown', function() {
+    showPaletteBtnOpen();
+  });
+}
+
+
+function openRenameDialog() {
+  const renameDialog = document.getElementById('renameDialog');
+  renameDialog.style.display = '';
+  renameDialog.classList.remove('closing');
+  renameDialog.classList.add('open');
+  const renameInput = document.getElementById('renameInput');
+  renameInput.value = '';
+  renameInput.focus();
+}
+
+function closeRenameDialog() {
+  const renameDialog = document.getElementById('renameDialog');
+  renameDialog.classList.remove('open');
+  renameDialog.classList.add('closing');
+  setTimeout(() => {
+    renameDialog.classList.remove('closing');
+    renameDialog.style.display = 'none';
+  }, 350);
+}
 
 let fsWatcher = null;
 
@@ -937,13 +976,6 @@ function createBadge(text, className) {
   const badge = document.createElement('span');
   badge.className = className + ' script-badge';
   badge.innerText = text;
-  badge.style.marginLeft = '6px';
-  badge.style.padding = '2px 6px';
-  badge.style.borderRadius = '4px';
-  badge.style.fontSize = '11px';
-  badge.style.background = '#3B4252'; // nord1
-  badge.style.color = '#D8DEE9'; // nord4
-  badge.style.display = 'inline-block';
   return badge;
 }
 
@@ -961,14 +993,6 @@ function createDiscordBadge(url) {
   const badge = document.createElement('span');
   badge.className = 'script-discord';
   badge.innerText = 'Discord';
-  badge.style.margin = '0 8px';
-  badge.style.padding = '2px 6px';
-  badge.style.borderRadius = '4px';
-  badge.style.fontSize = '11px';
-  badge.style.background = 'rgba(67,76,94,0.18)'; // nord2
-  badge.style.color = '#8FBCBB'; // nord7
-  badge.style.cursor = 'pointer';
-  badge.style.fontFamily = 'inherit';
   badge.onclick = (e) => {
     e.stopPropagation();
     if (window && window.process && window.process.type === 'renderer') {
@@ -997,8 +1021,6 @@ function createAuthor(user) {
   if (!user) return null;
   const el = document.createElement('div');
   el.className = 'script-author';
-  el.style.fontSize = '12px';
-  el.style.color = '#aaa';
   el.innerText = 'By ' + (user.username || user.name || 'Unknown');
   if (user.verified) {
     el.appendChild(createBadge('✔ Verified', 'script-verified'));
@@ -1010,8 +1032,6 @@ function createAuthor(user) {
 function createStats(script) {
   const el = document.createElement('div');
   el.className = 'script-stats';
-  el.style.fontSize = '11px';
-  el.style.color = '#888';
   let stats = [];
   if (typeof script.views === 'number') stats.push(`👁️ ${script.views}`);
   if (typeof script.likes === 'number') stats.push(`👍 ${script.likes}`);
@@ -1164,3 +1184,82 @@ async function executeCurrentScript() {
     }, 500);
   }
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+  const closeColorPickerBtn = document.getElementById('closeColorPicker');
+  if (closeColorPickerBtn && accentColorInput) {
+    closeColorPickerBtn.addEventListener('click', () => {
+      accentColorInput.blur();
+      accentColorInput.style.display = 'none';
+      setTimeout(() => {
+        accentColorInput.style.display = '';
+      }, 200);
+    });
+  }
+});
+
+const accentColorInput = document.getElementById('accentColorInput');
+const accentColorPreview = document.getElementById('accentColorPreview');
+
+function isValidHex(hex) {
+  return /^#?([0-9A-Fa-f]{6})$/.test(hex);
+}
+
+function normalizeHex(hex) {
+  hex = hex.trim();
+  if (!hex.startsWith('#')) {
+    hex = '#' + hex;
+  }
+  return hex;
+}
+
+function updateAccentColorPreview(hex) {
+  accentColorPreview.style.background = isValidHex(hex) ? normalizeHex(hex) : '#7FB4FF';
+}
+
+function handleAccentColorInput() {
+  const hex = accentColorInput.value.trim();
+  if (isValidHex(hex)) {
+    const normalized = normalizeHex(hex);
+    updateAccentColorPreview(normalized);
+    localStorage.setItem('accentColor', normalized);
+    applySettings();
+  } else {
+    updateAccentColorPreview(hex);
+  }
+}
+
+if (accentColorInput && accentColorPreview) {
+  accentColorInput.addEventListener('input', handleAccentColorInput);
+  settingsButton.addEventListener('click', () => {
+    const current = (localStorage.getItem('accentColor') || '#7FB4FF').replace(/^#/, '');
+    accentColorInput.value = current;
+    updateAccentColorPreview(current);
+  });
+}
+
+document.getElementById('cancelRename').addEventListener('click', () => {
+  closeRenameDialog();
+});
+
+document.getElementById('confirmRename').addEventListener('click', () => {
+  const renameInput = document.getElementById('renameInput');
+  const newName = renameInput.value.trim().split('.')[0];
+  if (!newName) {
+    showToast('Script name is required', true);
+    renameInput.focus();
+    return;
+  }
+  if (savedScripts.some(s => s.title === newName)) {
+    showToast(`Script "${newName}" already exists`, true);
+    renameInput.focus();
+    return;
+  }
+  const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === currentTab);
+  if (!tab) {
+    showToast('No script selected to save', true);
+    return;
+  }
+  saveScriptContent(tab, newName);
+  closeRenameDialog();
+});

@@ -33,10 +33,11 @@
       </div>
       <footer>
         <button id="save-button" class="button save-button" title="Save"><i class="fas fa-save"></i></button>
+        <button id="settings-button" class="button settings-button" title="Settings"><i class="fas fa-cog"></i></button>
         <div style="flex:1; display:flex; justify-content:center; align-items:center;">
           <button id="roblox-button" class="button roblox-button">Launch Roblox<i></i></button>
         </div>
-        <button id="toggleSidebar" class="button scripts-button">Scripts</button><button id="exec-button" class="exec-button"> <i class="fas fa-play"></i></button>
+        <button id="exec-button" class="exec-button"> <i class="fas fa-play"></i></button>
       </footer>
     </div>
     <div class="sidebar" id="sidebar"><input type="text" id="searchBox" placeholder="Search scripts..." />
@@ -47,15 +48,40 @@
       <div class="context-menu-item" id="renameScript">Rename</div>
       <div class="context-menu-item" id="deleteScript">Delete</div>
       <div class="context-menu-separator"></div>
-      <div class="context-menu-item" id="autoExecuteScript">Autoexecute <span class="context-menu-checkbox" id="autoExecuteCheckbox">✓</span></div>
+      <div class="context-menu-item" id="autoExecuteScript">AutoExecute <span class="context-menu-checkbox" id="autoExecuteCheckbox">✓</span></div>
+    </div>
+    <div class="settings-pane" id="settingsPane">
+      <div class="settings-content">
+        <h2>Settings</h2>
+        <div class="settings-group">
+          <label for="glowMode">Glow Mode</label>
+          <select id="glowMode">
+            <option value="none">none</option>
+            <option value="default">default</option>
+            <option value="high">drugs</option>
+          </select>
+          <button class="reset-btn" id="resetGlow">Reset</button>
+        </div>
+        <div class="settings-group">
+          <label for="accentColorInput">Accent Color</label>
+          <div class="accent-color-picker-wrapper">
+            <input id="accentColorInput" type="text" maxlength="6" placeholder="7FB4FF" class="accent-color-input" />
+            <span id="accentColorPreview" class="accent-color-preview"></span>
+          </div>
+          <button class="reset-btn" id="resetColor">Reset</button>
+        </div>
+        <div class="settings-actions">
+          <button id="closeSettings" class="button">Close</button>
+        </div>
+      </div>
     </div>
     <div class="rename-dialog" id="renameDialog">
       <div class="rename-content">
         <h2>Rename before saving</h2>
-        <input type="text" id="renameInput" placeholder="Enter script name" />
+        <input type="text" id="renameInput" placeholder="enter script name" />
         <div class="rename-buttons">
-          <button id="confirmRename">Save</button>
-          <button id="cancelRename">Cancel</button>
+          <button id="confirmRename" class="button">Save</button>
+          <button id="cancelRename" class="button">Cancel</button>
         </div>
       </div>
     </div>
