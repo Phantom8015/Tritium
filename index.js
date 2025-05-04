@@ -81,7 +81,7 @@ function processData(data) {
 function createWindow() {
   mainWindow = new BrowserWindow({
     resizable: true,
-    minWidth: 1200,
+    minWidth: 1250,
     minHeight: 640,
     width: 1450,
     height: 760,
