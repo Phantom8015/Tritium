@@ -4,7 +4,8 @@ if [ "$(uname)" != "Darwin" ]; then
   echo "This script is intended for macOS only."
   exit 1
 fi
-if [ "pgrep Tritium"] then
+
+if pgrep Tritium > /dev/null; then
   echo "Tritium is running, closing it..."
   kill -9 $(pgrep Tritium)
 fi
