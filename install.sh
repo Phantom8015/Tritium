@@ -4,6 +4,10 @@ if [ "$(uname)" != "Darwin" ]; then
   echo "This script is intended for macOS only."
   exit 1
 fi
+if [ "pgrep Tritium"] then
+  echo "Tritium is running, closing it..."
+  kill -9 $(pgrep Tritium)
+fi
 
 architecture=$(uname -m)
 if [[ "$architecture" == "arm64" ]]; then
