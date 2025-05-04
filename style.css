@@ -65,7 +65,7 @@ body::-webkit-scrollbar,
   background: linear-gradient(to right, #181A1B 0%, #232629 100%);
   border: 1.5px solid var(--accent-color);
 }
-.tab .close-btn { margin-left: 8px; opacity: 0.6; transition: opacity 0.2s; font-size: 15px; -webkit-app-region: no-drag; }
+.tab .close-btn { margin-left: 8px; opacity: 0.6; transition: opacity 0.2s; font-size: 15px;  }
 .tab:hover, .add-tab-btn:hover { background: linear-gradient(to right, #232629 0%, #181A1B 100%); }
 .tab:hover .close-btn { opacity: 1; }
 .add-tab-btn { border-radius: 50% !important; width: 36px; height: 36px; min-width: 36px; min-height: 36px; margin-left: 0 !important; margin-right: 10px; font-size: 22px; padding: 0; border-top-right-radius: 50% !important; border-bottom-right-radius: 50% !important; }
@@ -128,6 +128,7 @@ body::-webkit-scrollbar,
   background: #181A1B !important;
 }
 .CodeMirror-hints, .cm-s-nord .CodeMirror-hints {
+  border: none;
   font-family: 'Fira Code', monospace !important;
   font-size: 14px !important;
   background: #232629 !important;
@@ -326,6 +327,7 @@ footer {
 @keyframes paneFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes paneFadeOut { from { opacity: 1; } to { opacity: 0; } }
 .rename-content, .settings-content {
+  user-select: none;
   background: #2E3440;
   padding: 32px 32px 24px 32px;
   border-radius: 16px;
@@ -473,9 +475,9 @@ footer {
 .glow-none * { box-shadow: none !important; filter: none !important; }
 .glow-default .exec-button { box-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color), 0 0 30px var(--accent-color); }
 .glow-default .exec-button:hover { box-shadow: 0 0 20px var(--accent-color), 0 0 30px var(--accent-color), 0 0 40px var(--accent-color); }
-.glow-high .button, .glow-high .exec-button, .glow-high .tab, .glow-high .console-btn, .glow-high { box-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color), 0 0 30px var(--accent-color); transition: box-shadow 0.3s; }
-.glow-high .button:hover, .glow-high .exec-button:hover, .glow-high .tab:hover, .glow-high .console-btn:hover, .glow-high { box-shadow: 0 0 20px var(--accent-color), 0 0 30px var(--accent-color), 0 0 40px var(--accent-color); }
-.glow-high .sidebar.open { box-shadow: 0 0 20px 6px var(--accent-color), 0 0 40px 12px var(--accent-color); }
+.glow-high .button, .glow-high .exec-button, .glow-high .tab, .glow-high .console-btn, .glow-high { box-shadow: 0 0 50px var(--accent-color), 0 0 50px var(--accent-color), 0 0 50px var(--accent-color); transition: box-shadow 0.3s; }
+.glow-high .button:hover, .glow-high .exec-button:hover, .glow-high .tab:hover, .glow-high .console-btn:hover, .glow-high { box-shadow: 0 0 50px var(--accent-color), 0 0 50px var(--accent-color), 0 0 50px var(--accent-color); }
+.glow-high .sidebar.open { box-shadow: 0 0 50px 50px var(--accent-color), 0 0 50px 50px var(--accent-color); }
 .glow-high .add-tab-btn { position: relative; }
 .glow-none .exec-button:hover {
   filter: brightness(0.85) !important;

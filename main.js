@@ -21,6 +21,7 @@ const autoExecuteCheckbox = document.getElementById('autoExecuteCheckbox');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const path = require('path');
+const { console } = require('inspector');
 const consoleOutput = document.getElementById('consoleOutput');
 const clearConsoleBtn = document.getElementById('clearConsole');
 const settingsButton = document.getElementById('settings-button');
@@ -125,13 +126,118 @@ function showToast(message, isError = false) {
   }, 3000);
 }
 
-const luaKeywords = ['and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then', 'true', 'until', 'while', 'print', 'ipairs', 'pairs', 'tonumber', 'tostring', 'type', 'collectgarbage', 'error', 'setmetatable', 'getmetatable', 'require', 'pcall', 'xpcall', 'rawget', 'rawset', 'select', 'assert', 'loadstring', 'dofile', '_G', 'game', 'workspace', 'script', 'math', 'string', 'table', 'coroutine', 'debug', 'os', 'io', 'wait', 'spawn', 'delay', 'tick', 'task', 'Vector3', 'CFrame', 'Color3', 'UDim2', 'loadstring', 'Instance', 'GetService', 'FindFirstChild', 'GetChildren', 'Destroy', 'Clone', 'Parent', 'HttpGet', 'FireServer'];
-
 function createEditor(tabId, content) {
   const editorWrapper = document.createElement('div');
   editorWrapper.className = 'editor-wrapper';
   editorWrapper.id = `editor-${tabId}`;
   editorContainer.appendChild(editorWrapper);
+  const luaGlobals = [
+    
+    "and", "break", "do", "else", "elseif", "end", "false", "for", "function",
+    "goto", "if", "in", "local", "nil", "not", "or", "repeat", "return",
+    "then", "true", "until", "while",
+    
+    
+    "assert", "collectgarbage", "dofile", "error", "getmetatable", "ipairs",
+    "load", "loadfile", "next", "pairs", "pcall", "print", "rawequal",
+    "rawget", "rawlen", "rawset", "select", "setmetatable", "tonumber",
+    "tostring", "type", "xpcall", "warn",
+    
+    
+    "coroutine", "coroutine.create", "coroutine.resume", "coroutine.running",
+    "coroutine.status", "coroutine.wrap", "coroutine.yield", "coroutine.isyieldable",
+    "coroutine.close",
+    
+    
+    "table", "table.concat", "table.insert", "table.move", "table.pack",
+    "table.remove", "table.sort", "table.unpack", "table.clear", "table.find",
+    "table.foreach", "table.foreachi", "table.getn", "table.isfrozen",
+    "table.maxn", "table.create",
+    
+    
+    "string", "string.byte", "string.char", "string.dump", "string.find",
+    "string.format", "string.gmatch", "string.gsub", "string.len", "string.lower",
+    "string.match", "string.rep", "string.reverse", "string.sub", "string.upper",
+    "string.pack", "string.packsize", "string.unpack", "string.split",
+    
+    
+    "math", "math.abs", "math.acos", "math.asin", "math.atan", "math.atan2",
+    "math.ceil", "math.clamp", "math.cos", "math.cosh", "math.deg", "math.exp",
+    "math.floor", "math.fmod", "math.frexp", "math.ldexp", "math.log", "math.log10",
+    "math.max", "math.min", "math.modf", "math.pow", "math.rad", "math.random",
+    "math.randomseed", "math.round", "math.sign", "math.sin", "math.sinh", "math.sqrt",
+    "math.tan", "math.tanh", "math.pi", "math.huge", "math.noise",
+    
+    
+    "io", "io.close", "io.flush", "io.input", "io.lines", "io.open", "io.output",
+    "io.popen", "io.read", "io.stderr", "io.stdin", "io.stdout", "io.tmpfile",
+    "io.type", "io.write",
+    
+    
+    "os", "os.clock", "os.date", "os.difftime", "os.execute", "os.exit", "os.getenv",
+    "os.remove", "os.rename", "os.setlocale", "os.time", "os.tmpname",
+    
+    
+    "debug", "debug.debug", "debug.gethook", "debug.getinfo", "debug.getlocal",
+    "debug.getmetatable", "debug.getregistry", "debug.getupvalue", "debug.getuservalue",
+    "debug.sethook", "debug.setlocal", "debug.setmetatable", "debug.setupvalue",
+    "debug.setuservalue", "debug.traceback", "debug.upvalueid", "debug.upvaluejoin",
+    
+    
+    "package", "package.config", "package.cpath", "package.loaded", "package.loaders",
+    "package.loadlib", "package.path", "package.preload", "package.searchers",
+    "package.searchpath",
+    
+    
+    "utf8", "utf8.char", "utf8.charpattern", "utf8.codepoint", "utf8.codes",
+    "utf8.len", "utf8.offset",
+    
+    
+    "bit32", "bit32.arshift", "bit32.band", "bit32.bnot", "bit32.bor", "bit32.btest",
+    "bit32.bxor", "bit32.extract", "bit32.lrotate", "bit32.lshift", "bit32.replace",
+    "bit32.rrotate", "bit32.rshift",
+    
+    
+    "typeof", "getfenv", "setfenv", "shared", "script", "require", "spawn", "delay",
+    "tick", "time", "UserSettings", "settings", "game", "workspace", "shared",
+    "script", "wait", "Delay", "ElapsedTime", "elapsedTime", "require",
+    
+    
+    "Vector2", "Vector3", "Vector2int16", "Vector3int16", "CFrame", "Color3",
+    "ColorSequence", "NumberRange", "NumberSequence", "Rect", "UDim", "UDim2",
+    "Faces", "Axes", "BrickColor", "Enum", "Instance", "TweenInfo", "Region3",
+    "Region3int16", "Ray", "Random", "RaycastResult",
+    
+    
+    "plugin", "command", "printidentity", "settings", "stats", "testservice",
+    "http", "HttpService", "HttpRbxApiService", "ContextActionService",
+    "RunService", "DataStoreService", "MessagingService", "CollectionService",
+    "ContentProvider", "PathfindingService", "PhysicsService", "ReplicatedStorage",
+    "ServerScriptService", "ServerStorage", "StarterGui", "StarterPack",
+    "StarterPlayer", "Teams", "TeleportService", "TextService", "UserInputService",
+    "VirtualInputManager", "VoiceChatService", "MarketplaceService", "GroupService",
+    "LocalizationService", "NotificationService", "BadgeService", "GamePassService",
+    "DataStoreService", "SocialService", "PlayerService", "Chat", "SoundService",
+    "Lighting", "Workspace", "Players", "Debris", "NetworkClient", "NetworkServer",
+    "Visit", "GuiService", "CoreGui", "CorePackages", "LogService", "MemoryStoreService",
+    "PolicyService", "SessionService", "TextChatService", "ThirdPartyPurchaseService",
+    "VersionControlService", "VRService"
+  ];
+  function luaHint(cm) {
+    const cursor = cm.getCursor();
+    const token = cm.getTokenAt(cursor);
+    const start = token.start;
+    const end = cursor.ch;
+    const currentWord = token.string;
+  
+    const filtered = luaGlobals.filter(kw => kw.startsWith(currentWord));
+    return {
+      list: filtered,
+      from: CodeMirror.Pos(cursor.line, start),
+      to: CodeMirror.Pos(cursor.line, end)
+    };
+  }
+  
   const editor = CodeMirror(editorWrapper, {
     value: content || '-- New script',
     mode: "lua",
@@ -146,10 +252,7 @@ function createEditor(tabId, content) {
     autoCloseBrackets: true,
     extraKeys: {
       "Ctrl-Space": function(cm) {
-        cm.showHint({
-          hint: CodeMirror.hint.anyword,
-          words: luaKeywords
-        });
+        cm.showHint({ hint: luaHint });
       },
       "Tab": function(cm) {
         const cursor = cm.getCursor();
@@ -157,30 +260,28 @@ function createEditor(tabId, content) {
         const cursorPos = cursor.ch;
         const textBeforeCursor = line.substring(0, cursorPos);
         if (textBeforeCursor.trim().length > 0 && !textBeforeCursor.endsWith(" ")) {
-          cm.showHint({
-            hint: CodeMirror.hint.anyword,
-            words: luaKeywords
-          });
+          cm.showHint({ hint: luaHint });
         } else {
           cm.replaceSelection("  ", "end");
         }
       }
     }
   });
+  
   editor.setSize("100%", "100%");
+  
   editor.on("keyup", function(cm, event) {
     const allowedKeys = /^[a-zA-Z0-9_\.]$/;
     if (allowedKeys.test(event.key)) {
       cm.showHint({
-        hint: CodeMirror.hint.anyword,
-        words: luaKeywords,
+        hint: luaHint,
         completeSingle: false
       });
     }
   });
+  
   return editor;
 }
-
 
 function setLocalStorage(key, value) {
   try {
@@ -347,7 +448,10 @@ deleteScriptBtn.addEventListener('click', () => {
         showToast(`Script "${currentContextScript}" deleted`);
         const tabsToClose = Array.from(tabs.children).filter(tab => tab.dataset.realTabName === currentContextScript);
         tabsToClose.forEach(tab => {
-          closeTab(tab.dataset.id);
+          if (Array.from(tabs.children).length === 1) {
+            createTab();
+          }
+          closeTab(true, tab.dataset.id);
         });
         showToast(`Script "${currentContextScript}" deleted`);
       } catch (err) {
@@ -387,7 +491,7 @@ function createTab(name = "Untitled", content = "-- New script") {
   closeBtn.innerHTML = '&times;';
   closeBtn.onclick = (e) => {
     e.stopPropagation();
-    closeTab(id);
+    closeTab(false, id);
   };
   tab.appendChild(closeBtn);
   tab.dataset.id = id;
@@ -423,10 +527,10 @@ function switchTab(id) {
   currentTab = id;
 }
 
-function closeTab(id) {
+function closeTab(forced, id) {
     const remainingTabIds = Object.keys(editors);
     const tab = Array.from(document.querySelectorAll('.tab')).find(t => t.dataset.id === id);
-    if (remainingTabIds.length === 1) {
+    if (remainingTabIds.length === 1 && !forced) {
       return showToast("Cannot close the last tab", true);
     }
 
@@ -451,8 +555,8 @@ function closeTab(id) {
 
 
 
-function closeCurrentTab() {
-  if (currentTab) closeTab(currentTab);
+function closeCurrentTab(forced) {
+  if (currentTab) closeTab(forced, currentTab);
 }
 
 function saveCurrentScript() {
@@ -515,9 +619,12 @@ function saveScriptContent(tab, scriptName) {
       
       
       showToast(`Script "${scriptName.replace('.txt', '')}" saved successfully!`);
-      closeCurrentTab();
-      loadSavedScripts();
-      createTab(scriptName.replace('.txt', ''), scriptContent);
+      closeCurrentTab(true);
+      setTimeout(() => {
+        createTab(scriptName.replace('.txt', ''), scriptContent);
+      }, 100);
+
+      
       
       if (sidebar.classList.contains('open') && !searchBox.value) {
         renderSidebar();
@@ -555,7 +662,7 @@ document.addEventListener('keydown', (e) => {
   }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
     e.preventDefault();
-    closeCurrentTab();
+    closeCurrentTab(false);
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     e.preventDefault();
