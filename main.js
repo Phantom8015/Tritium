@@ -292,7 +292,7 @@ function getLocalStorage(key, fallback) {
 
 function updateTabDisplayName(tab, newName) {
   let displayName = newName;
-  if (newName.length > 10) displayName = newName.substring(0, 10) + '...';
+  if (newName.length > 5) displayName = newName.substring(0, 10) + '...';
   tab.dataset.name = displayName;
   tab.querySelector('span').textContent = displayName;
 }
@@ -469,7 +469,7 @@ function createTab(name = "Untitled", content = "-- New script") {
   tab.className = 'tab new-tab'; 
   const tabName = document.createElement('span');
   const realTabName = name;
-  if (name.length > 10) {
+  if (name.length > 5) {
     name = name.substring(0, 10) + '...';
   }
   tab.dataset.realTabName = realTabName;
