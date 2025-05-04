@@ -1,4 +1,5 @@
 body {
+  padding-top: 70px;
   margin: 0;
   padding: 0;
   font-family: 'Fira Code', monospace;
@@ -23,9 +24,13 @@ body::-webkit-scrollbar,
   display: flex;
   flex-direction: column;
   gap: 1px;
+  padding-top: 70px;
   overflow: visible;
 }
 .tabs, .tabs-bar {
+  transform: translateX(10px);
+  user-select: none;
+  margin-left: 20px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -36,11 +41,9 @@ body::-webkit-scrollbar,
   padding: 0;
   box-sizing: border-box;
   overflow: visible;
-  z-index: 1003;
-  position: relative;
+  z-index: 999;
+  position: sticky;
 }
-.tabs { margin-left: 20px; }
-.tabs-bar { margin-bottom: 12px; margin-top: 20px; z-index: 1002; }
 .tab, .add-tab-btn {
   user-select: none;
   background: linear-gradient(to right, #232629 0%, #232629 100%);
@@ -58,7 +61,7 @@ body::-webkit-scrollbar,
   cursor: pointer;
   position: relative;
   flex: none;
-  z-index: 1004;
+  z-index: 9999999;
   overflow: visible;
 }
 .tab.active {
@@ -80,6 +83,7 @@ body::-webkit-scrollbar,
   flex-direction: column;
   overflow: visible;
   margin: 8px;
+  margin-top: 70px;
   z-index: 20;
 }
 .sidebar.open {
@@ -317,7 +321,6 @@ footer {
   justify-content: center;
   align-items: center;
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
   animation: none;
 }
@@ -343,6 +346,30 @@ footer {
   flex-direction: column;
   gap: 32px;
   align-items: stretch;
+}
+.top-bar {
+  margin: 16px;
+  border-radius: 16px;
+  user-select: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background-color: #232629;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  z-index: 9999;
+  -webkit-app-region: drag;
+
+}
+.top-bar-title {
+  flex: 1;
+  text-align: center;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--accent-color);
 }
 .rename-dialog.open .rename-content, .settings-pane.open .settings-content { transform: scale(1); opacity: 1; }
 .rename-dialog.closing .rename-content, .settings-pane.closing .settings-content { transform: scale(0.96); opacity: 0; }

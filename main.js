@@ -45,17 +45,6 @@ if (!fs.existsSync(scriptsDirectory)) {
     fs.mkdirSync(scriptsDirectory, { recursive: true });
 }
 
-function makeWindowDraggable() {
-  if (!isElectron || !ipcRenderer) return;
-  const tabsElement = document.getElementById('tabs');
-  tabsElement.style.webkitAppRegion = 'drag';
-  
-  const draggableElements = tabsElement.querySelectorAll('.tab');
-  draggableElements.forEach(el => {
-    el.style.webkitAppRegion = 'no-drag';
-  });
-}
-
 function addLog(message, type = 'info') {
   if (message.length > 200) {
     message = message.substring(0, 200) + '...';
@@ -850,7 +839,6 @@ window.onload = function() {
   console.log("Auto-execute scripts:", loadAutoExecuteScripts());
   console.log("Saved scripts:", savedScripts);
   loadSavedScripts();
-  makeWindowDraggable();
   startLogWatcher();
   startFileWatcher();
   sidebar.classList.add('open');

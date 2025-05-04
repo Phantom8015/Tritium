@@ -89,6 +89,9 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,  
     },
+    titleBarStyle: 'hidden',
+    trafficLightPosition: { x: 27, y: 27 },
+
     icon: __dirname + './icon.png',
     title: "Tritium",
   });
