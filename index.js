@@ -81,7 +81,7 @@ function processData(data) {
 function createWindow() {
   mainWindow = new BrowserWindow({
     resizable: true,
-    minWidth: 1250,
+    minWidth: 1290,
     minHeight: 640,
     width: 1450,
     height: 760,
@@ -91,10 +91,10 @@ function createWindow() {
     },
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 27, y: 27 },
-
     icon: __dirname + './icon.png',
     title: "Tritium",
   });
+
   
   mainWindow.setMenuBarVisibility(false);
   

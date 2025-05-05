@@ -83,7 +83,9 @@ function switchToNewLogFile(mainWindow) {
           lines.filter(line => line.trim() !== '').forEach(line => {
             mainWindow.webContents.send('log-update', line);
             if (line.includes('[FLog::Output] Connection accepted')) {
-              mainWindow.webContents.send('game-join-detected');
+              setTimeout(() => {
+                mainWindow.webContents.send('game-join-detected');
+              }, 1000);
             }
           });
         });

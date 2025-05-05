@@ -30,6 +30,11 @@ const closeSettingsBtn = document.getElementById('closeSettings');
 const glowModeSelect = document.getElementById('glowMode');
 const resetGlowBtn = document.getElementById('resetGlow');
 const resetColorBtn = document.getElementById('resetColor');
+const scriptsDirectory = path.join(require('os').homedir(), 'Documents', 'Tritium');
+const toggleConsole = document.getElementById('toggleConsole');
+const consoleContainer = document.querySelector('.console-container');
+const toggleSidebar = document.getElementById('sidebar-toggle-btn')
+
 let editors = {};
 let savedScripts = [];
 let currentTab = null;
@@ -37,9 +42,41 @@ let currentContextScript = null;
 let updatedLoaded = false;
 let currentSearchId = 0;
 let updatedScripts = [];
+let consoleExpanded = true;
+let sidebarOpen = true;
 
-const scriptsDirectory = path.join(require('os').homedir(), 'Documents', 'Tritium');
+toggleConsole.addEventListener('click', function() {
+  if(!consoleExpanded) {
+    consoleContainer.classList.remove('collapsed');
+    toggleConsole.style.transition = 'transform 0.3s ease';
+    toggleConsole.style.transform = 'rotate(360deg)';
+    toggleConsole.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+  } else {
+    consoleContainer.classList.remove('collapsed');
+    toggleConsole.style.transition = 'transform 0.3s ease';
+    toggleConsole.style.transform = 'rotate(-360deg)';
+    consoleContainer.classList.add('collapsed');
+    toggleConsole.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+  }
+  consoleExpanded = !consoleExpanded;
+});
 
+toggleConsole.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+
+toggleSidebar.addEventListener('click', () => {
+  if (sidebarOpen) {
+    toggleSidebar.style.transition = 'transform 0.3s ease';
+    toggleSidebar.style.transform = 'rotate(360deg)';
+    sidebar.classList.remove('open');
+    sidebarOpen = false;
+  }
+  else {
+    toggleSidebar.style.transition = 'transform 0.3s ease';
+    toggleSidebar.style.transform = 'rotate(-360deg)';
+    sidebar.classList.add('open');
+    sidebarOpen = true;
+  }
+});
 
 if (!fs.existsSync(scriptsDirectory)) {
     fs.mkdirSync(scriptsDirectory, { recursive: true });
@@ -212,6 +249,7 @@ function createEditor(tabId, content) {
     "PolicyService", "SessionService", "TextChatService", "ThirdPartyPurchaseService",
     "VersionControlService", "VRService"
   ];
+  
   function luaHint(cm) {
     const cursor = cm.getCursor();
     const token = cm.getTokenAt(cursor);
@@ -460,7 +498,7 @@ autoExecuteScriptBtn.addEventListener('click', () => {
 });
 
 function createTab(name = "Untitled", content = "-- New script") {
-  if (tabs.children.length >= 7) {
+  if (tabs.children.length >= 6) {
     showToast("Maximum tabs reached", true);
     return;
   }
@@ -759,40 +797,15 @@ async function searchScripts(query) {
   if (!query || query.length < 2) return;
   const thisSearchId = ++currentSearchId;
   scriptsList.innerHTML = '';
-  const searchHeader = document.createElement('div');
-  searchHeader.className = 'sidebar-category';
-  searchHeader.textContent = `Search Results: "${query}"`;
-  scriptsList.appendChild(searchHeader);
   let foundInSaved = false;
   const lowerQuery = query.toLowerCase();
-  savedScripts.forEach(script => {
-    if (script.title.toLowerCase().includes(lowerQuery) || (script.script && script.script.toLowerCase().includes(lowerQuery))) {
-      foundInSaved = true;
-      const item = document.createElement('div');
-      item.className = 'script-item saved-script';
-      const content = document.createElement('div');
-      content.className = 'script-content';
-      const title = document.createElement('div');
-      title.className = 'script-title';
-      title.textContent = script.title;
-      content.appendChild(title);
-      item.appendChild(content);
-      item.onclick = () => createTab(script.title, script.script);
-      item.oncontextmenu = (e) => showContextMenu(e, script.title);
-      scriptsList.appendChild(item);
-    }
-  });
-  if (!foundInSaved) {
-    const noResults = document.createElement('div');
-    noResults.className = 'script-item';
-    noResults.textContent = 'No matching scripts found in your saved scripts';
-    scriptsList.appendChild(noResults);
-  }
+
   const searchingIndicator = document.createElement('div');
   searchingIndicator.className = 'sidebar-category';
-  searchingIndicator.textContent = 'Searching Online...';
+  searchingIndicator.textContent = 'Searching...';
   scriptsList.appendChild(searchingIndicator);
   try {
+    
     await new Promise(resolve => setTimeout(resolve, 500));
     if (thisSearchId !== currentSearchId) return;
     
@@ -811,8 +824,28 @@ async function searchScripts(query) {
     if (rData && rData.scripts && rData.scripts.length > 0) {
       rscriptsResults = rData.scripts;
     }
-    
+    scriptsList.innerHTML = '';
+    scriptsList.appendChild(searchingIndicator);
+
     let maxLen = Math.max(scriptbloxResults.length, rscriptsResults.length);
+    savedScripts.forEach(script => {
+      if (script.title.toLowerCase().includes(lowerQuery) || (script.script && script.script.toLowerCase().includes(lowerQuery))) {
+        foundInSaved = true;
+        const item = document.createElement('div');
+        item.className = 'script-item saved-script';
+        const content = document.createElement('div');
+        content.className = 'script-content';
+        const title = document.createElement('div');
+        title.className = 'script-title' ;
+        title.textContent = script.title;
+        content.appendChild(title);
+        item.appendChild(content);
+        item.onclick = () => createTab(script.title, script.script);
+        item.oncontextmenu = (e) => showContextMenu(e, script.title);
+        scriptsList.appendChild(item);
+        maxLen++;
+      }
+    });
     for (let i = 0; i < maxLen; i++) {
       if (i < scriptbloxResults.length) {
         const item = await renderScriptItem(scriptbloxResults[i], 'Scriptblox');
@@ -823,10 +856,11 @@ async function searchScripts(query) {
         scriptsList.appendChild(item);
       }
     }
+    searchingIndicator.textContent = `Results (${maxLen})`;
   } catch (err) {
     if (thisSearchId === currentSearchId) {
       console.error('Error searching scripts:', err);
-      searchingIndicator.textContent = 'Online Results (Error)';
+      searchingIndicator.textContent = 'Results (Error)';
       const errorItem = document.createElement('div');
       errorItem.className = 'script-item';
       errorItem.textContent = `Error searching: ${err.message}`;
@@ -1137,7 +1171,6 @@ function createStats(script) {
 
 
 async function renderScriptItem(script, source) {
-  
   if (source === 'Rscripts' && script._id && (!script.description || !script.user || !script.game)) {
     try {
       const res = await fetch(`https://rscripts.net/api/v2/script?id=${script._id}`);
