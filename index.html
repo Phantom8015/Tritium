@@ -2,54 +2,169 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Tritium</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Hydrogen</title>
     <meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-darker.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/hint/show-hint.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/material-darker.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/hint/show-hint.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <div class="top-bar">
-    <div class="top-bar-title">Tritium</div>
+    <div class="top-bar-title">Hydrogen</div>
   </div>
   <body>
-    
+    <div class="workspace-sidebar" id="workspace-sidebar">
+      <div class="workspace-header">
+        <div class="workspace-title">
+          <i class="fas fa-folder"></i>
+          <span>Workspaces</span>
+        </div>
+        <div class="workspace-actions">
+          <button
+            id="new-workspace-btn"
+            class="small-button workspace-btn"
+            title="New Workspace"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+          <button
+            id="clear-workspace-btn"
+            class="small-button workspace-btn"
+            title="Clear Workspaces"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="workspaces-list" id="workspaces-list"></div>
+    </div>
     <div class="container">
       <div class="tabs-bar">
         <div class="tabs" id="tabs"></div>
-        <div style="display: flex; gap: 6px;">
-          <button id="sidebar-toggle-btn" class="tab sidebar-toggle-btn" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
-          <button id="new-tab-btn" class="tab add-tab-btn" title="New Tab"><i class="fas fa-plus"></i></button>
+        <div class="button-row" style="display: flex; gap: 6px">
+          <button
+            id="sidebar-toggle-btn"
+            class="medium-button sidebar-toggle-btn"
+            title="Toggle Sidebar"
+          >
+            <i class="fas fa-bars"></i>
+          </button>
+          <button
+            id="new-tab-btn"
+            class="medium-button add-tab-btn"
+            title="New Tab"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
         </div>
       </div>
-      
+
       <div class="editor-container" id="editor-container">
         <div class="tooltip" id="tooltip"></div>
       </div>
+
+      <div class="prompter" id="copilot-prompter">
+        <textarea
+          id="promptInput"
+          placeholder="What kind of script do you want?"
+        ></textarea>
+        <div class="prompter-buttons">
+          <button id="generateBtn" class="prompter-button generate-btn">
+            Generate
+          </button>
+          <button id="cancelBtn" class="prompter-button cancel-btn">
+            Cancel
+          </button>
+        </div>
+      </div>
+
       <div class="console-container">
         <div class="console-header">
           <span>Console</span>
-          <div style="display: flex; gap: 8px;">
-            <button class="console-btn" id="copyConsole" title="Copy Console"><i class="fas fa-copy"></i></button>
-            <button class="console-btn" id="clearConsole" title="Clear Console"><i class="fas fa-trash"></i></button>
+          <div class="console-button-row" style="display: flex; gap: 8px">
+            <button
+              class="medium-button console-btn"
+              id="copyConsole"
+              title="Copy Console"
+            >
+              <i class="fas fa-copy"></i>
+            </button>
+            <button
+              class="medium-button console-btn"
+              id="clearConsole"
+              title="Clear Console"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
         <div class="console-output" id="consoleOutput"></div>
       </div>
       <footer>
-        <button class="button toggleConsole" id="toggleConsole" title="Toggle Console"><i class="fa-solid fa-arrows-up-down"></i></button>
-        <button id="save-button" class="button save-button" title="Save"><i class="fas fa-save"></i></button>
-        <button id="settings-button" class="button settings-button" title="Settings"><i class="fas fa-cog"></i></button>
-        <div style="flex:1; display:flex; justify-content:center; align-items:center;">
-          <button id="roblox-button" class="button roblox-button"><span class="robloxtext">Launch Roblox</span><i></i></button>
+        <button
+          class="button toggleConsole"
+          id="toggleConsole"
+          title="Toggle Console"
+        >
+          <i class="fa-solid fa-arrows-up-down"></i>
+        </button>
+        <button id="save-button" class="button save-button" title="Save">
+          <i class="fas fa-save"></i>
+        </button>
+        <button id="workspace-toggle-btn" class="button workspace-toggle-btn">
+          <i class="fas fa-briefcase"></i>
+        </button>
+        <button
+          id="settings-button"
+          class="button settings-button"
+          title="Settings"
+        >
+          <i class="fas fa-cog"></i>
+        </button>
+        <button
+          id="copilot-button"
+          class="button copilot-button"
+          title="Hydrogen Copilot"
+        >
+          <i class="fa-solid fa-cloud"></i>
+        </button>
+        <div class="rgggg">
+          <button
+            id="roblox-button"
+            class="button roblox-button"
+            title="Launch Roblox"
+          >
+            <i class="fas fa-rocket"></i>
+          </button>
         </div>
-        <button id="exec-button" class="exec-button"> <i class="fas fa-play"></i></button>
+        <button id="exec-button" class="exec-button">
+          <i class="fas fa-play"></i>
+        </button>
       </footer>
     </div>
-    <div class="sidebar" id="sidebar"><input type="text" id="searchBox" placeholder="Search scripts..." />
+    <div class="sidebar" id="sidebar">
+      <input type="text" id="searchBox" placeholder="Search scripts..." />
       <div class="scripts" id="scripts"></div>
     </div>
     <div class="toast" id="toast"></div>
@@ -57,24 +172,36 @@
       <div class="context-menu-item" id="renameScript">Rename</div>
       <div class="context-menu-item" id="deleteScript">Delete</div>
       <div class="context-menu-separator"></div>
-      <div class="context-menu-item" id="autoExecuteScript">AutoExecute <span class="context-menu-checkbox" id="autoExecuteCheckbox">✓</span></div>
+      <div class="context-menu-item" id="autoExecuteScript">
+        AutoExecute
+        <span class="context-menu-checkbox" id="autoExecuteCheckbox">✓</span>
+      </div>
     </div>
     <div class="settings-pane" id="settingsPane">
       <div class="settings-content">
         <h2>Settings</h2>
         <div class="settings-group">
-          <label for="glowMode">Glow Mode</label>
+          <label for="glowMode">Graphics</label>
           <select id="glowMode">
-            <option value="none">none</option>
             <option value="default">default</option>
+            <option value="old">og</option>
             <option value="high">drugs</option>
           </select>
           <button class="reset-btn" id="resetGlow">Reset</button>
+          <button class="update-btn" id="updateHydrogen">
+            Update Hydrogen
+          </button>
         </div>
         <div class="settings-group">
           <label for="accentColorInput">Accent Color</label>
           <div class="accent-color-picker-wrapper">
-            <input id="accentColorInput" type="text" maxlength="6" placeholder="7FB4FF" class="accent-color-input" />
+            <input
+              id="accentColorInput"
+              type="text"
+              maxlength="6"
+              placeholder="7FB4FF"
+              class="accent-color-input"
+            />
             <span id="accentColorPreview" class="accent-color-preview"></span>
           </div>
           <button class="reset-btn" id="resetColor">Reset</button>
@@ -87,7 +214,7 @@
     <div class="rename-dialog" id="renameDialog">
       <div class="rename-content">
         <h2>Rename before saving</h2>
-        <input type="text" id="renameInput" placeholder="enter script name" />
+        <input type="text" id="renameInput" placeholder="Enter script name" />
         <div class="rename-buttons">
           <button id="confirmRename" class="button">Save</button>
           <button id="cancelRename" class="button">Cancel</button>

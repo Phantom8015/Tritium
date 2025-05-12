@@ -5,8 +5,11 @@ A custom Hydrogen UI made in Electron
 - Script hub
 - Auto execute
 - Open source
-- Script saving
+- Better script saving
 - Roblox console
+- Workspaces
+- Customizable colors
+- Hydrogen updator
 
 ## Installation
 
