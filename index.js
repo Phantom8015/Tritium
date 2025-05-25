@@ -1,11 +1,21 @@
-const { app, BrowserWindow, ipcMain, systemPreferences } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  systemPreferences,
+  globalShortcut,
+} = require("electron");
 const sudo = require("sudo-prompt");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 const START_PORT = 6969;
 const END_PORT = 7069;
 let serverPort = null;
 let lastError = "";
 let port = null;
 let mainWindow = null;
+let spotlightWindow = null;
 
 ipcMain.on("invokeAction", function (event, data) {
   console.log("Received IPC message:", data);
@@ -28,34 +38,9 @@ ipcMain.handle("show-save-dialog", async () => {
   const { dialog } = require("electron");
   return dialog.showSaveDialog({
     title: "Save Script",
-    defaultPath: path.join(require("os").homedir(), "Documents", "Hydrogen"),
+    defaultPath: path.join(require("os").homedir(), "Documents", "Tritium"),
     filters: [{ name: "Text Files", extensions: ["txt"] }],
   });
-});
-
-ipcMain.handle("get-accent-color", () => {
-  const colors = {
-    3: "#6FBF58",
-    4: "#1250AE",
-    5: "#B52EB5",
-    0: "#FF3B30",
-    1: "#F89453",
-    2: "#EFC259",
-    6: "#BC3E77",
-    "-1": "#8C8C8C",
-  };
-
-  const command = "defaults read -g AppleAccentColor";
-  const { execSync } = require("child_process");
-  let accentColor = null;
-  try {
-    const output = execSync(command).toString().trim();
-    const colorKey = output.split(" ")[0];
-    accentColor = colors[colorKey] || "#7FB4FF";
-  } catch (error) {
-    console.error("Error getting accent color:", error);
-  }
-  return accentColor;
 });
 
 ipcMain.handle("hydro-update", async () => {
@@ -68,6 +53,93 @@ ipcMain.handle("hydro-update", async () => {
       resolve(stdout || stderr);
     });
   });
+});
+
+function initializeSpotlight() {
+  spotlightWindow = new BrowserWindow({
+    width: 600,
+    height: 300,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    vibrancy: "hud",
+    alwaysOnTop: true,
+    show: false,
+    skipTaskbar: true,
+    resizable: false,
+    center: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  spotlightWindow.loadFile(path.join(__dirname, "spotlight.html"));
+
+  spotlightWindow.on("closed", () => {
+    spotlightWindow = null;
+  });
+
+  spotlightWindow.on("blur", () => {
+    if (
+      spotlightWindow &&
+      !spotlightWindow.isDestroyed() &&
+      spotlightWindow.isVisible()
+    ) {
+      const devToolsWebContents =
+        spotlightWindow.webContents.devToolsWebContents;
+
+      if (!(devToolsWebContents && devToolsWebContents.isFocused())) {
+        spotlightWindow.hide();
+      }
+    }
+  });
+}
+
+function showSpotlight() {
+  if (!spotlightWindow || spotlightWindow.isDestroyed()) {
+    initializeSpotlight();
+  }
+
+  if (spotlightWindow.isVisible()) {
+    spotlightWindow.focus();
+  } else {
+    spotlightWindow.center();
+    spotlightWindow.show();
+    spotlightWindow.focus();
+  }
+
+  spotlightWindow.webContents.send("spotlight-shown");
+}
+
+ipcMain.handle("list-scripts", async () => {
+  const scriptsDir = path.join(os.homedir(), "Documents", "Tritium");
+  try {
+    if (!fs.existsSync(scriptsDir)) {
+      fs.mkdirSync(scriptsDir, { recursive: true });
+      return [];
+    }
+    const files = fs.readdirSync(scriptsDir);
+    return files.filter(
+      (file) =>
+        file.endsWith(".txt") &&
+        fs.statSync(path.join(scriptsDir, file)).isFile(),
+    );
+  } catch (error) {
+    console.error("Error listing scripts:", error);
+    return [];
+  }
+});
+
+ipcMain.on("hide-spotlight-window", () => {
+  if (
+    spotlightWindow &&
+    !spotlightWindow.isDestroyed() &&
+    spotlightWindow.isVisible()
+  ) {
+    spotlightWindow.hide();
+  }
+  spotlightWindow = null;
 });
 
 async function ligma(scriptContent) {
@@ -145,7 +217,7 @@ function createWindow() {
     titleBarStyle: "hidden",
     trafficLightPosition: { x: 27, y: 27 },
     icon: __dirname + "./icon.png",
-    title: "Hydrogen",
+    title: "Tritium",
   });
 
   mainWindow.setMenuBarVisibility(false);
@@ -174,4 +246,32 @@ function createWindow() {
   mainWindow.loadFile("./index.html");
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  initializeSpotlight();
+
+  try {
+    globalShortcut.register("Option+.", () => {
+      showSpotlight();
+    });
+  } catch (e) {
+    console.error('Failed to register global shortcut "Option+.":', e);
+  }
+
+  if (process.platform === "darwin") {
+    app.dock.setMenu(
+      require("electron").Menu.buildFromTemplate([
+        {
+          label: "New Window",
+          click: () => {
+            createWindow();
+          },
+        },
+      ]),
+    );
+  }
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
+});

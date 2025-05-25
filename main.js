@@ -34,7 +34,7 @@ const resetColorBtn = document.getElementById("resetColor");
 const scriptsDirectory = path.join(
   require("os").homedir(),
   "Documents",
-  "Hydrogen",
+  "Tritium",
 );
 const toggleConsole = document.getElementById("toggleConsole");
 const consoleContainer = document.querySelector(".console-container");
@@ -74,7 +74,6 @@ clearWorkspaceBtn.addEventListener("click", () => {
     if (sidebar.classList.contains("open")) {
       renderSidebar();
     }
-
   }
 });
 
@@ -701,7 +700,10 @@ function persistSavedScripts() {
 }
 function loadAutoExecuteScripts() {
   let autoexecuteScriptse = getLocalStorage("autoExecuteScripts", []);
-  const autoexecDir = path.join(require("os").homedir() + "/Hydrogen", "autoexecute");
+  const autoexecDir = path.join(
+    require("os").homedir() + "/Hydrogen",
+    "autoexecute",
+  );
   if (!fs.existsSync(autoexecDir)) {
     fs.mkdirSync(autoexecDir, { recursive: true });
   }
@@ -752,39 +754,38 @@ function showContextMenu(e, scriptName) {
   currentContextWorkspace = null;
   contextMenu.innerHTML = "";
   const renameOption = document.createElement("div");
-    renameOption.className = "context-menu-item";
-    renameOption.innerHTML = '<i class="fas fa-edit"></i> Rename';
-    renameOption.onclick = () => {
-      renameScriptBtn.click();
-      contextMenu.style.display = "none";
-    };
+  renameOption.className = "context-menu-item";
+  renameOption.innerHTML = '<i class="fas fa-edit"></i> Rename';
+  renameOption.onclick = () => {
+    renameScriptBtn.click();
+    contextMenu.style.display = "none";
+  };
 
-    const deleteOption = document.createElement("div");
-    deleteOption.className = "context-menu-item";
-    deleteOption.innerHTML = '<i class="fas fa-trash"></i> Delete';
-    deleteOption.onclick = () => {
-      deleteScriptBtn.click();
-      contextMenu.style.display = "none";
-    };
+  const deleteOption = document.createElement("div");
+  deleteOption.className = "context-menu-item";
+  deleteOption.innerHTML = '<i class="fas fa-trash"></i> Delete';
+  deleteOption.onclick = () => {
+    deleteScriptBtn.click();
+    contextMenu.style.display = "none";
+  };
 
-    const autoExecuteOption = document.createElement("div");
-    autoExecuteOption.className = "context-menu-item";
-    autoExecuteOption.innerHTML = '<i class="fas fa-bolt"></i>Auto Execute';
-    autoExecuteOption.onclick = () => {
-      autoExecuteScriptBtn.click();
-      contextMenu.style.display = "none";
-    };
+  const autoExecuteOption = document.createElement("div");
+  autoExecuteOption.className = "context-menu-item";
+  autoExecuteOption.innerHTML = '<i class="fas fa-bolt"></i>Auto Execute';
+  autoExecuteOption.onclick = () => {
+    autoExecuteScriptBtn.click();
+    contextMenu.style.display = "none";
+  };
 
-    contextMenu.appendChild(renameOption);
-    contextMenu.appendChild(deleteOption);
-    contextMenu.appendChild(autoExecuteOption);
+  contextMenu.appendChild(renameOption);
+  contextMenu.appendChild(deleteOption);
+  contextMenu.appendChild(autoExecuteOption);
 
   contextMenu.style.display = "block";
   contextMenu.style.left = `${e.pageX}px`;
   contextMenu.style.top = `${e.pageY}px`;
   updateAutoExecuteCheckbox(scriptName);
 }
-
 
 function showWorkspaceContextMenu(e, workspaceId) {
   e.preventDefault();
@@ -944,9 +945,9 @@ function createTab(name = "Untitled", content = "-- New script") {
   tab.appendChild(tabName);
   const closeBtn = document.createElement("span");
   closeBtn.className = "close-btn";
-  const closeIcon = document.createElement('i'); 
-  closeIcon.className = 'fas fa-times'; 
-  closeBtn.appendChild(closeIcon); 
+  const closeIcon = document.createElement("i");
+  closeIcon.className = "fas fa-times";
+  closeBtn.appendChild(closeIcon);
   closeBtn.onclick = (e) => {
     e.stopPropagation();
     closeTab(false, id);
@@ -1507,7 +1508,10 @@ window.onload = function () {
   updatedLoaded = false;
   loadWorkspaces();
   switchWorkspace(workspaces[0].id);
-  createTab('startup', 'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()');
+  createTab(
+    "startup",
+    'loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield_500"))()',
+  );
   const tabsToDelete = Array.from(tabs.children).filter(
     (tab) => tab.dataset.realTabName !== "startup",
   );
@@ -2120,45 +2124,50 @@ function loadWorkspaceTabs() {
 }
 
 function renameWorkspace(workspaceId) {
-    const workspaceItem = Array.from(document.querySelectorAll(".workspace-item")).find(item => {
-        return item.querySelector("span").textContent === workspaces.find(w => w.id === workspaceId).name;
-    });
+  const workspaceItem = Array.from(
+    document.querySelectorAll(".workspace-item"),
+  ).find((item) => {
+    return (
+      item.querySelector("span").textContent ===
+      workspaces.find((w) => w.id === workspaceId).name
+    );
+  });
 
-    if (!workspaceItem) return;
+  if (!workspaceItem) return;
 
-    const titleElement = workspaceItem.querySelector("span");
-    const originalName = titleElement.textContent;
+  const titleElement = workspaceItem.querySelector("span");
+  const originalName = titleElement.textContent;
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = originalName;
-    input.className = "rename-input";
-    titleElement.replaceWith(input);
-    input.focus();
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = originalName;
+  input.className = "rename-input";
+  titleElement.replaceWith(input);
+  input.focus();
 
-    function handleRename() {
-        const newName = input.value.trim();
-        if (newName && newName !== originalName) {
-            const workspace = workspaces.find(w => w.id === workspaceId);
-            if (workspace) {
-                workspace.name = newName;
-                saveWorkspaces();
-                renderWorkspacesSidebar();
-            }
-        }
-        titleElement.textContent = newName || originalName;
-        input.replaceWith(titleElement);
+  function handleRename() {
+    const newName = input.value.trim();
+    if (newName && newName !== originalName) {
+      const workspace = workspaces.find((w) => w.id === workspaceId);
+      if (workspace) {
+        workspace.name = newName;
+        saveWorkspaces();
+        renderWorkspacesSidebar();
+      }
     }
+    titleElement.textContent = newName || originalName;
+    input.replaceWith(titleElement);
+  }
 
-    input.addEventListener("blur", handleRename);
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            handleRename();
-        } else if (e.key === "Escape") {
-            input.value = originalName;
-            input.blur();
-        }
-    });
+  input.addEventListener("blur", handleRename);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      handleRename();
+    } else if (e.key === "Escape") {
+      input.value = originalName;
+      input.blur();
+    }
+  });
 }
 
 function deleteWorkspace(workspaceId) {
@@ -2170,7 +2179,9 @@ function deleteWorkspace(workspaceId) {
   const workspace = workspaces.find((w) => w.id === workspaceId);
   if (!workspace) return;
 
-  if (confirm(`Are you sure you want to delete workspace "${workspace.name}"?`)) {
+  if (
+    confirm(`Are you sure you want to delete workspace "${workspace.name}"?`)
+  ) {
     const index = workspaces.findIndex((w) => w.id === workspaceId);
     if (index !== -1) {
       workspaces.splice(index, 1);
@@ -2209,59 +2220,56 @@ window.addEventListener("beforeunload", () => {
 });
 
 function addWorkspaceSidebar() {
-  const container = document.querySelector('.container');
+  const container = document.querySelector(".container");
   if (!container) return;
-  
-  if (!document.getElementById('workspace-toggle-btn')) {
-    const toggleBtn = document.getElementById('workspace-toggle-btn'); 
+
+  if (!document.getElementById("workspace-toggle-btn")) {
+    const toggleBtn = document.getElementById("workspace-toggle-btn");
     toggleBtn.addEventListener("click", () => {
       workspaceSidebarOpen = !workspaceSidebarOpen;
-      
+
       if (workspaceSidebarOpen) {
         workspaceSidebar.classList.add("open");
         toggleBtn.style.transform = "rotate(-360deg)";
-        document.querySelector('.main-content').style.marginLeft = "200px";
+        document.querySelector(".main-content").style.marginLeft = "200px";
       } else {
         workspaceSidebar.classList.remove("open");
         toggleBtn.style.transform = "rotate(360deg)";
-        document.querySelector('.main-content').style.marginLeft = "0";
+        document.querySelector(".main-content").style.marginLeft = "0";
       }
     });
-    
-    
-    document.getElementById('new-workspace-btn').addEventListener('click', createNewWorkspace);
+
+    document
+      .getElementById("new-workspace-btn")
+      .addEventListener("click", createNewWorkspace);
   }
 }
 
-
 function restructureDOM() {
-  
   const body = document.body;
-  const container = document.querySelector('.container');
+  const container = document.querySelector(".container");
   if (!container) return;
-  
-  
-  const mainContent = document.createElement('div');
-  mainContent.className = 'main-content';
-  
-  
-  Array.from(container.children).forEach(child => {
-    if (!child.classList.contains('sidebar') && 
-        !child.classList.contains('workspace-sidebar')) {
+
+  const mainContent = document.createElement("div");
+  mainContent.className = "main-content";
+
+  Array.from(container.children).forEach((child) => {
+    if (
+      !child.classList.contains("sidebar") &&
+      !child.classList.contains("workspace-sidebar")
+    ) {
       mainContent.appendChild(child);
     }
   });
-  
-  
+
   container.appendChild(mainContent);
 }
 
-
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   restructureDOM();
   addWorkspaceSidebar();
 });
 
 window.addEventListener("beforeunload", () => {
-  localStorage.removeItem("workspaces"); 
+  localStorage.removeItem("workspaces");
 });
