@@ -1,11 +1,12 @@
 {
   "name": "Tritium",
-  "version": "3.2.0",
+  "version": "3.1.1",
   "description": "Hydrogen custom ui",
   "author": "phantom8015",
   "dependencies": {
     "@google-cloud/vertexai": "^1.10.0",
     "chokidar": "^4.0.3",
+    "node-fetch": "^2.7.0",
     "sudo-prompt": "^9.2.1"
   },
   "scripts": {

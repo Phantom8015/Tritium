@@ -110,21 +110,21 @@ generateBtn.addEventListener("click", async () => {
   try {
     copilotPrompter.classList.add("loading");
     generateBtn.innerHTML = "Generating...";
+    // const response = await fetch("http://127.0.0.1:5000/generate", {
     const response = await fetch("http://tritiumcopilot.vercel.app/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(prompt),
+      body: JSON.stringify({
+        prompt: prompt,
+        script: editors[currentTab].getValue(),
+      }),
     });
 
     const data = await response.json();
     console.log(data);
     if (data && data.response) {
-      if (data.response.includes("Sorry I cannot help you with that.")) {
-        showToast("Please try another prompt", true);
-        return;
-      }
       const editor = editors[currentTab];
       if (editor) {
         const resp = data.response.replace(/\\n/g, "\n").replace(/\\t/g, "\t");

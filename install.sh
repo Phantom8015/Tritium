@@ -5,11 +5,6 @@ if [ "$(uname)" != "Darwin" ]; then
   exit 1
 fi
 
-if pgrep Tritium > /dev/null; then
-  echo "Tritium is running, closing it..."
-  kill -9 $(pgrep Tritium)
-fi
-
 architecture=$(uname -m)
 if [[ "$architecture" == "arm64" ]]; then
   url="https://github.com/Phantom8015/Tritium/releases/download/v3.2.0/Tritium-3.2.0-arm64-mac.zip"
@@ -36,4 +31,4 @@ unzip -o "/tmp/Tritium/Tritium.zip" -d "/tmp/Tritium"
 mv -f "/tmp/Tritium/Tritium.app" "/Applications"
 rm -rf "/tmp/Tritium"
 
-echo "Tritium has been successfully installed!"
+echo "Tritium has been successfully installed! Please restart the app if it was running during installation."

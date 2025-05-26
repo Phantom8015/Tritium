@@ -4,11 +4,14 @@ const {
   ipcMain,
   systemPreferences,
   globalShortcut,
+  dialog,
 } = require("electron");
 const sudo = require("sudo-prompt");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const fetch = require("node-fetch");
+const { version: currentVersion } = require("./package.json");
 const START_PORT = 6969;
 const END_PORT = 7069;
 let serverPort = null;
@@ -54,6 +57,69 @@ ipcMain.handle("hydro-update", async () => {
     });
   });
 });
+
+async function checkForUpdates() {
+  try {
+    const response = await fetch(
+      "https://api.github.com/repos/Phantom8015/Tritium/releases/latest",
+    );
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    const data = await response.json();
+    const latestVersion = data.tag_name.replace("v", "");
+
+    const current = currentVersion.split(".").map(Number);
+    const latest = latestVersion.split(".").map(Number);
+
+    for (let i = 0; i < 3; i++) {
+      if (latest[i] > current[i]) {
+        const choice = await dialog.showMessageBox(mainWindow, {
+          type: "info",
+          title: "Update Available",
+          message: `A new version of Tritium (${latestVersion}) is available!\nWould you like to update now?`,
+          buttons: ["Update", "Later"],
+          defaultId: 0,
+        });
+
+        if (choice.response === 0) {
+          await update();
+        }
+        break;
+      }
+    }
+  } catch (error) {
+    console.error("Error checking for updates:", error);
+  }
+}
+
+async function update() {
+  try {
+    const command =
+      "curl -fsSL https://raw.githubusercontent.com/Phantom8015/Tritium/main/install.sh | bash";
+    const options = { name: "Tritium Updater" };
+    await new Promise((resolve, reject) => {
+      sudo.exec(command, options, (error, stdout, stderr) => {
+        if (error) return reject(error);
+        resolve(stdout || stderr);
+      });
+    });
+    dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "Update Complete",
+      message:
+        "Tritium has been updated successfully. Please restart the application.",
+      buttons: ["OK"],
+    });
+  } catch (error) {
+    dialog.showMessageBox(mainWindow, {
+      type: "error",
+      title: "Update Failed",
+      message: `Failed to update Tritium: ${error.message}`,
+      buttons: ["OK"],
+    });
+  }
+}
 
 function initializeSpotlight() {
   spotlightWindow = new BrowserWindow({
@@ -249,6 +315,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   initializeSpotlight();
+  checkForUpdates();
 
   try {
     globalShortcut.register("Option+.", () => {
