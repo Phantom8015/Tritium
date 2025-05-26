@@ -17,16 +17,16 @@ fi
 
 mkdir -p "/tmp/Tritium"
 if [ -d "/Applications/Tritium.app" ]; then
-  echo "Tritium is already installed. Deleting3.2.1."
+  echo "Tritium is already installed. Deleting..."
   rm -rf "/Applications/Tritium.app"
   echo "Tritium has been deleted."
 else
   echo "Tritium is not installed. Proceeding with installation."
 fi
 
-echo "Downloading Tritium for $ARCH3.2.1."
+echo "Downloading Tritium for $ARCH..."
 curl -L -o "/tmp/Tritium/Tritium.zip" "$url"
-echo "Extracting Tritium3.2.1."
+echo "Extracting Tritium..."
 unzip -o "/tmp/Tritium/Tritium.zip" -d "/tmp/Tritium"
 mv -f "/tmp/Tritium/Tritium.app" "/Applications"
 rm -rf "/tmp/Tritium"
