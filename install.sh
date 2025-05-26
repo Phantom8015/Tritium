@@ -24,7 +24,7 @@ else
   echo "Tritium is not installed. Proceeding with installation."
 fi
 
-echo "Downloading Tritium for $ARCH..."
+echo "Downloading Tritium for $architecture..."
 curl -L -o "/tmp/Tritium/Tritium.zip" "$url"
 echo "Extracting Tritium..."
 unzip -o "/tmp/Tritium/Tritium.zip" -d "/tmp/Tritium"
