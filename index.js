@@ -137,6 +137,7 @@ function initializeSpotlight() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      devTools: !app.isPackaged,
     },
   });
 
