@@ -126,7 +126,6 @@ function initializeSpotlight() {
     width: 600,
     height: 300,
     frame: false,
-    transparent: true,
     backgroundColor: "#00000000",
     vibrancy: "hud",
     alwaysOnTop: true,
@@ -207,6 +206,18 @@ ipcMain.on("hide-spotlight-window", () => {
     spotlightWindow.hide();
   }
   spotlightWindow = null;
+});
+
+ipcMain.on("set-vibrancy", (event, enableVibrancy) => {
+  if (mainWindow) {
+    mainWindow.setVibrancy(enableVibrancy ? "under-window" : null);
+  }
+});
+
+ipcMain.on("set-spvibrancy", (event, enableVibrancy) => {
+  if (spotlightWindow) {
+    spotlightWindow.setVibrancy(enableVibrancy ? "under-window" : null);
+  }
 });
 
 async function ligma(scriptContent) {

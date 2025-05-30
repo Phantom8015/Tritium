@@ -50,6 +50,7 @@ const workspaceSidebar = document.getElementById("workspace-sidebar");
 const workspaceToggleBtn = document.getElementById("workspace-toggle-btn");
 const newWorkspaceBtn = document.getElementById("new-workspace-btn");
 const clearWorkspaceBtn = document.getElementById("clear-workspace-btn");
+const vibrancyToggle = document.getElementById("vibrancyToggle");
 
 let editors = {};
 let savedScripts = [];
@@ -110,7 +111,7 @@ generateBtn.addEventListener("click", async () => {
   try {
     copilotPrompter.classList.add("loading");
     generateBtn.innerHTML = "Generating...";
-    // const response = await fetch("http://127.0.0.1:5000/generate", {
+
     const response = await fetch("http://tritiumcopilot.vercel.app/generate", {
       method: "POST",
       headers: {
@@ -187,9 +188,6 @@ if (!fs.existsSync(scriptsDirectory)) {
 }
 
 function addLog(message, type = "info") {
-  if (message.length > 200) {
-    message = message.substring(0, 200) + "...";
-  }
   const logElement = document.createElement("div");
   logElement.className = `log-${type} log-entry`;
   logElement.textContent = message;
@@ -1585,21 +1583,38 @@ function getSettings() {
   return {
     glowMode: localStorage.getItem("glowMode") || "default",
     accentColor: localStorage.getItem("accentColor") || "#7FB4FF",
+    vibrancyEnabled: localStorage.getItem("vibrancyEnabled") === "true",
   };
 }
 
 function applySettings() {
-  const { glowMode, accentColor } = getSettings();
+  const { glowMode, accentColor, vibrancyEnabled } = getSettings();
   document.body.classList.remove("glow-default", "glow-old", "glow-high");
   document.body.classList.add("glow-" + glowMode);
   document.documentElement.style.setProperty("--accent-color", accentColor);
   glowModeSelect.value = glowMode;
+  if (isElectron && ipcRenderer) {
+    ipcRenderer.send("set-vibrancy", vibrancyEnabled);
+  }
+  vibrancyToggle.value = vibrancyEnabled ? "on" : "off";
 }
 
 function saveSettings() {
   localStorage.setItem("glowMode", glowModeSelect.value);
+  localStorage.setItem("accentColor", `#${accentColorInput.value}`);
+  localStorage.setItem("vibrancyEnabled", vibrancyToggle.value === "on");
   applySettings();
 }
+
+vibrancyToggle.addEventListener("change", () => {
+  const isEnabled = vibrancyToggle.value === "on";
+  console.log("Vibrancy enabled:", isEnabled);
+  if (isElectron && ipcRenderer) {
+    ipcRenderer.send("set-vibrancy", isEnabled);
+  }
+  saveSettings();
+  applySettings();
+});
 
 glowModeSelect.addEventListener("change", saveSettings);
 

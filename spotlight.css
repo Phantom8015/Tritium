@@ -2,8 +2,7 @@ body,
 html {
   margin: 0;
   padding: 0;
-  font-family: "Fira Code", monospace;
-  background-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   border-radius: 10px;
   height: 100%;
   display: flex;
@@ -28,7 +27,7 @@ html {
   flex-grow: 1;
   padding: 10px 15px;
   font-size: 18px;
-  font-family: "Fira Code", monospace;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   border: none;
   user-select: none;
   border-radius: 6px;
@@ -88,7 +87,7 @@ html {
   cursor: pointer;
   font-size: 16px;
   user-select: none;
-  font-family: "Fira Code", monospace;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   border-radius: 6px;
   margin: 4px 8px;
   background-color: rgba(32, 32, 32, 0.356);

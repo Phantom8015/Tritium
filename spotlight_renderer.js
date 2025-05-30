@@ -15,6 +15,8 @@ function applyAccentColor() {
   try {
     const accentColor = localStorage.getItem("accentColor") || "#7FB4FF";
     document.documentElement.style.setProperty("--accent-color", accentColor);
+    const vibrancyEnabled = localStorage.getItem("vibrancyEnabled") === "true";
+    ipcRenderer.send("set-spvibrancy", vibrancyEnabled);
   } catch (error) {
     console.error("Error applying accent color:", error);
   }
