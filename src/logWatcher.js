@@ -86,7 +86,11 @@ function switchToNewLogFile(mainWindow) {
           lines
             .filter((line) => line.trim() !== "")
             .forEach((line) => {
-              mainWindow.webContents.send("log-update", line);
+              try {
+                mainWindow.webContents.send("log-update", line);
+              } catch (err) {
+                console.error("Error sending log update to main window:", err);
+              }
             });
         });
 

@@ -142,7 +142,8 @@ body::-webkit-scrollbar,
 }
 .button:hover i,
 .small-button:hover i,
-.medium-button:hover i {
+.medium-button:hover i,
+.button:hover img.roblox-svg-icon {
   color: var(--accent-color);
   transition: color 0.3s;
   filter: brightness(0.85);
@@ -484,6 +485,15 @@ footer {
   margin-left: 6px;
   font-size: 22px;
 }
+
+.button img.roblox-svg-icon {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.3));
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .toast {
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
 }

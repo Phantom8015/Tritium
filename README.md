@@ -10,6 +10,8 @@ A custom Hydrogen UI made in Electron
 - Workspaces
 - Customizable colors
 - Hydrogen updator
+- AI script generator
+- Spotlight-execution
 
 ## Installation
 

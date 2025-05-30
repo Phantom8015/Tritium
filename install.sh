@@ -7,9 +7,9 @@ fi
 
 architecture=$(uname -m)
 if [[ "$architecture" == "arm64" ]]; then
-  url="https://github.com/Phantom8015/Tritium/releases/download/v3.2.3/Tritium-3.2.3-arm64-mac.zip"
+  url="https://github.com/Phantom8015/Tritium/releases/download/v3.2.4/Tritium-3.2.4-arm64-mac.zip"
 elif [[ "$architecture" == "x86_64" ]]; then
-  url="https://github.com/Phantom8015/Tritium/releases/download/v3.2.3/Tritium-3.2.3-mac.zip"
+  url="https://github.com/Phantom8015/Tritium/releases/download/v3.2.4/Tritium-3.2.4-mac.zip"
 else
   echo "Unsupported architecture: $architecture"
   exit 1
