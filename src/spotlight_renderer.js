@@ -56,24 +56,35 @@ async function loadAvailableScriptNames() {
       (name) => new ScriptItem(name, null, { type: "local", source: "Local" }),
     );
 
-    const [scriptbloxScripts, rscriptsScripts] = await Promise.all([
-      fetchScriptbloxScripts(),
-      fetchRscriptsScripts(),
-    ]);
+    const scriptHub = localStorage.getItem("scriptHub") || "both";
 
-    const maxLength = Math.max(
-      scriptbloxScripts.length,
-      rscriptsScripts.length,
-    );
-    const alternatingResults = [];
-    for (let i = 0; i < maxLength; i++) {
-      if (i < scriptbloxScripts.length)
-        alternatingResults.push(scriptbloxScripts[i]);
-      if (i < rscriptsScripts.length)
-        alternatingResults.push(rscriptsScripts[i]);
+    let remoteScripts = [];
+
+    if (scriptHub === "both") {
+      const [scriptbloxScripts, rscriptsScripts] = await Promise.all([
+        fetchScriptbloxScripts(),
+        fetchRscriptsScripts(),
+      ]);
+
+      const maxLength = Math.max(
+        scriptbloxScripts.length,
+        rscriptsScripts.length,
+      );
+      const alternatingResults = [];
+      for (let i = 0; i < maxLength; i++) {
+        if (i < scriptbloxScripts.length)
+          alternatingResults.push(scriptbloxScripts[i]);
+        if (i < rscriptsScripts.length)
+          alternatingResults.push(rscriptsScripts[i]);
+      }
+      remoteScripts = alternatingResults;
+    } else if (scriptHub === "scriptblox") {
+      remoteScripts = await fetchScriptbloxScripts();
+    } else if (scriptHub === "rscripts") {
+      remoteScripts = await fetchRscriptsScripts();
     }
 
-    allAvailableScriptNames = [...localScripts, ...alternatingResults];
+    allAvailableScriptNames = [...localScripts, ...remoteScripts];
 
     displayInitialScriptSuggestions();
   } catch (error) {
@@ -329,23 +340,33 @@ async function displayFilteredScriptSuggestions(searchText) {
 
 async function searchRemoteScripts(query) {
   try {
-    const [scriptbloxResults, rscriptsResults] = await Promise.all([
-      searchScriptbloxScripts(query),
-      searchRscriptsScripts(query),
-    ]);
+    const scriptHub = localStorage.getItem("scriptHub") || "both";
 
-    const maxLength = Math.max(
-      scriptbloxResults.length,
-      rscriptsResults.length,
-    );
-    const alternatingResults = [];
-    for (let i = 0; i < maxLength; i++) {
-      if (i < scriptbloxResults.length)
-        alternatingResults.push(scriptbloxResults[i]);
-      if (i < rscriptsResults.length)
-        alternatingResults.push(rscriptsResults[i]);
+    if (scriptHub === "both") {
+      const [scriptbloxResults, rscriptsResults] = await Promise.all([
+        searchScriptbloxScripts(query),
+        searchRscriptsScripts(query),
+      ]);
+
+      const maxLength = Math.max(
+        scriptbloxResults.length,
+        rscriptsResults.length,
+      );
+      const alternatingResults = [];
+      for (let i = 0; i < maxLength; i++) {
+        if (i < scriptbloxResults.length)
+          alternatingResults.push(scriptbloxResults[i]);
+        if (i < rscriptsResults.length)
+          alternatingResults.push(rscriptsResults[i]);
+      }
+      return alternatingResults;
+    } else if (scriptHub === "scriptblox") {
+      return await searchScriptbloxScripts(query);
+    } else if (scriptHub === "rscripts") {
+      return await searchRscriptsScripts(query);
     }
-    return alternatingResults;
+
+    return [];
   } catch (error) {
     console.error("Error searching remote scripts:", error);
     return [];
@@ -556,6 +577,12 @@ ipcRenderer.on("spotlight-shown", () => {
   scriptSearchInput.focus();
 
   applyAccentColor();
+});
+
+window.addEventListener("storage", function (e) {
+  if (e.key === "scriptHub") {
+    loadAvailableScriptNames();
+  }
 });
 
 loadAvailableScriptNames();

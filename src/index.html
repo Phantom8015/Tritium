@@ -191,14 +191,10 @@
             <option value="old">og</option>
             <option value="high">drugs</option>
           </select>
-          <button class="reset-btn" id="resetGlow">Reset</button>
-          <button class="update-btn" id="updateHydrogen">
-            Update Hydrogen
-          </button>
         </div>
         <div class="settings-group">
-          <label for="accentColorInput">Accent Color</label>
-          <div class="accent-color-picker-wrapper">
+          <label for="accentColorInput">Accent</label>
+          <div class="setting-control">
             <input
               id="accentColorInput"
               type="text"
@@ -206,9 +202,14 @@
               placeholder="7FB4FF"
               class="accent-color-input"
             />
-            <span id="accentColorPreview" class="accent-color-preview"></span>
+            <button
+              class="reset-btn"
+              id="resetColor"
+              title="Reset Accent Color"
+            >
+              <i class="fas fa-sync-alt"></i>
+            </button>
           </div>
-          <button class="reset-btn" id="resetColor">Reset</button>
         </div>
         <div class="settings-group">
           <label for="vibrancyToggle">Vibrancy</label>
@@ -219,8 +220,20 @@
             </select>
           </div>
         </div>
-        <div class="settings-actions">
-          <button id="closeSettings" class="button">Close</button>
+        <div class="settings-group">
+          <label for="scriptHub">Script Hub</label>
+          <div class="setting-control">
+            <select id="scriptHub">
+              <option value="both" selected>Both</option>
+              <option value="scriptblox">ScriptBlox</option>
+              <option value="rscripts">Rscripts</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-group">
+          <button class="update-btn" id="updateHydrogen">
+            Update Hydrogen
+          </button>
         </div>
       </div>
     </div>

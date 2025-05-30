@@ -27,9 +27,7 @@ const consoleOutput = document.getElementById("consoleOutput");
 const clearConsoleBtn = document.getElementById("clearConsole");
 const settingsButton = document.getElementById("settings-button");
 const settingsPane = document.getElementById("settingsPane");
-const closeSettingsBtn = document.getElementById("closeSettings");
 const glowModeSelect = document.getElementById("glowMode");
-const resetGlowBtn = document.getElementById("resetGlow");
 const resetColorBtn = document.getElementById("resetColor");
 const scriptsDirectory = path.join(
   require("os").homedir(),
@@ -51,6 +49,7 @@ const workspaceToggleBtn = document.getElementById("workspace-toggle-btn");
 const newWorkspaceBtn = document.getElementById("new-workspace-btn");
 const clearWorkspaceBtn = document.getElementById("clear-workspace-btn");
 const vibrancyToggle = document.getElementById("vibrancyToggle");
+const scriptHubSelect = document.getElementById("scriptHub");
 
 let editors = {};
 let savedScripts = [];
@@ -1322,27 +1321,36 @@ document
 async function loadupdated() {
   showToast("Loading scripts...");
   try {
-    const res = await fetch("https://scriptblox.com/api/script/fetch");
-    const res2 = await fetch(
-      "https://rscripts.net/api/v2/scripts?page=1&orderBy=date",
-    );
-    const data = await res.json();
-    const data2 = await res2.json();
+    const scriptHub = localStorage.getItem("scriptHub") || "both";
+
     let scriptbloxScripts = [];
     let rscriptsScripts = [];
-    if (data && data.result && data.result.scripts) {
-      scriptbloxScripts = data.result.scripts.map((s) => ({
-        ...s,
-        __source: "Scriptblox",
-      }));
+
+    if (scriptHub === "both" || scriptHub === "scriptblox") {
+      const res = await fetch("https://scriptblox.com/api/script/fetch");
+      const data = await res.json();
+      if (data && data.result && data.result.scripts) {
+        scriptbloxScripts = data.result.scripts.map((s) => ({
+          ...s,
+          __source: "Scriptblox",
+        }));
+      }
     }
-    if (data2 && data2.scripts) {
-      rscriptsScripts = data2.scripts.map((s) => ({
-        ...s,
-        __source: "Rscripts",
-      }));
-      console.log("Rscripts data:", data2);
+
+    if (scriptHub === "both" || scriptHub === "rscripts") {
+      const res2 = await fetch(
+        "https://rscripts.net/api/v2/scripts?page=1&orderBy=date",
+      );
+      const data2 = await res2.json();
+      if (data2 && data2.scripts) {
+        rscriptsScripts = data2.scripts.map((s) => ({
+          ...s,
+          __source: "Rscripts",
+        }));
+        console.log("Rscripts data:", data2);
+      }
     }
+
     let merged = [];
     let i = 0,
       j = 0;
@@ -1428,26 +1436,34 @@ async function searchScripts(query) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     if (thisSearchId !== currentSearchId) return;
 
-    const searchUrl = `https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}&`;
-    const response = await fetch(searchUrl);
-    const data = await response.json();
+    const scriptHub = localStorage.getItem("scriptHub") || "both";
+
     let scriptbloxResults = [];
-    if (
-      data &&
-      data.result &&
-      data.result.scripts &&
-      data.result.scripts.length > 0
-    ) {
-      scriptbloxResults = data.result.scripts;
+    let rscriptsResults = [];
+
+    if (scriptHub === "both" || scriptHub === "scriptblox") {
+      const searchUrl = `https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}&`;
+      const response = await fetch(searchUrl);
+      const data = await response.json();
+      if (
+        data &&
+        data.result &&
+        data.result.scripts &&
+        data.result.scripts.length > 0
+      ) {
+        scriptbloxResults = data.result.scripts;
+      }
     }
 
-    const rUrl = `https://rscripts.net/api/v2/scripts?q=${encodeURIComponent(query)}&page=1&orderBy=date`;
-    const rRes = await fetch(rUrl);
-    const rData = await rRes.json();
-    let rscriptsResults = [];
-    if (rData && rData.scripts && rData.scripts.length > 0) {
-      rscriptsResults = rData.scripts;
+    if (scriptHub === "both" || scriptHub === "rscripts") {
+      const rUrl = `https://rscripts.net/api/v2/scripts?q=${encodeURIComponent(query)}&page=1&orderBy=date`;
+      const rRes = await fetch(rUrl);
+      const rData = await rRes.json();
+      if (rData && rData.scripts && rData.scripts.length > 0) {
+        rscriptsResults = rData.scripts;
+      }
     }
+
     scriptsList.innerHTML = "";
     scriptsList.appendChild(searchingIndicator);
 
@@ -1584,11 +1600,12 @@ function getSettings() {
     glowMode: localStorage.getItem("glowMode") || "default",
     accentColor: localStorage.getItem("accentColor") || "#7FB4FF",
     vibrancyEnabled: localStorage.getItem("vibrancyEnabled") === "true",
+    scriptHub: localStorage.getItem("scriptHub") || "both",
   };
 }
 
 function applySettings() {
-  const { glowMode, accentColor, vibrancyEnabled } = getSettings();
+  const { glowMode, accentColor, vibrancyEnabled, scriptHub } = getSettings();
   document.body.classList.remove("glow-default", "glow-old", "glow-high");
   document.body.classList.add("glow-" + glowMode);
   document.documentElement.style.setProperty("--accent-color", accentColor);
@@ -1597,12 +1614,18 @@ function applySettings() {
     ipcRenderer.send("set-vibrancy", vibrancyEnabled);
   }
   vibrancyToggle.value = vibrancyEnabled ? "on" : "off";
+  if (scriptHubSelect) {
+    scriptHubSelect.value = scriptHub;
+  }
 }
 
 function saveSettings() {
   localStorage.setItem("glowMode", glowModeSelect.value);
   localStorage.setItem("accentColor", `#${accentColorInput.value}`);
   localStorage.setItem("vibrancyEnabled", vibrancyToggle.value === "on");
+  if (scriptHubSelect) {
+    localStorage.setItem("scriptHub", scriptHubSelect.value);
+  }
   applySettings();
 }
 
@@ -1618,14 +1641,22 @@ vibrancyToggle.addEventListener("change", () => {
 
 glowModeSelect.addEventListener("change", saveSettings);
 
-resetGlowBtn.addEventListener("click", () => {
-  glowModeSelect.value = "default";
-  saveSettings();
-});
+if (scriptHubSelect) {
+  scriptHubSelect.addEventListener("change", () => {
+    saveSettings();
+
+    updatedLoaded = false;
+    updatedScripts = [];
+
+    if (sidebar.classList.contains("open")) {
+      renderSidebar();
+    }
+  });
+}
+
 resetColorBtn.addEventListener("click", () => {
   localStorage.setItem("accentColor", "#7FB4FF");
   accentColorInput.value = "7FB4FF";
-  updateAccentColorPreview("7FB4FF");
   applySettings();
 });
 
@@ -1634,14 +1665,6 @@ settingsButton.addEventListener("click", () => {
   settingsPane.classList.remove("closing");
   settingsPane.classList.add("open");
   applySettings();
-});
-closeSettingsBtn.addEventListener("click", () => {
-  settingsPane.classList.remove("open");
-  settingsPane.classList.add("closing");
-  setTimeout(() => {
-    settingsPane.classList.remove("closing");
-    settingsPane.style.display = "none";
-  }, 350);
 });
 settingsPane.addEventListener("click", (e) => {
   if (e.target === settingsPane) {
@@ -1963,7 +1986,6 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 const accentColorInput = document.getElementById("accentColorInput");
-const accentColorPreview = document.getElementById("accentColorPreview");
 
 function isValidHex(hex) {
   return /^#?([0-9A-Fa-f]{6})$/.test(hex);
@@ -1977,25 +1999,16 @@ function normalizeHex(hex) {
   return hex;
 }
 
-function updateAccentColorPreview(hex) {
-  accentColorPreview.style.background = isValidHex(hex)
-    ? normalizeHex(hex)
-    : "#7FB4FF";
-}
-
 function handleAccentColorInput() {
   const hex = accentColorInput.value.trim();
   if (isValidHex(hex)) {
     const normalized = normalizeHex(hex);
-    updateAccentColorPreview(normalized);
     localStorage.setItem("accentColor", normalized);
     applySettings();
-  } else {
-    updateAccentColorPreview(hex);
   }
 }
 
-if (accentColorInput && accentColorPreview) {
+if (accentColorInput) {
   accentColorInput.addEventListener("input", handleAccentColorInput);
   settingsButton.addEventListener("click", () => {
     const current = (localStorage.getItem("accentColor") || "#7FB4FF").replace(
@@ -2003,7 +2016,6 @@ if (accentColorInput && accentColorPreview) {
       "",
     );
     accentColorInput.value = current;
-    updateAccentColorPreview(current);
   });
 }
 
