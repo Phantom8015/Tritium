@@ -12,6 +12,7 @@ const path = require("path");
 const os = require("os");
 const fetch = require("node-fetch");
 const { version: currentVersion } = require("./package.json");
+const { exec } = require("child_process");
 const START_PORT = 6969;
 const END_PORT = 7069;
 let serverPort = null;
@@ -97,21 +98,71 @@ async function update() {
   try {
     const command =
       "curl -fsSL https://raw.githubusercontent.com/Phantom8015/Tritium/main/install.sh | bash";
-    const options = { name: "Tritium Updater" };
+
     await new Promise((resolve, reject) => {
-      sudo.exec(command, options, (error, stdout, stderr) => {
-        if (error) return reject(error);
-        resolve(stdout || stderr);
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Update error: ${error.message}`);
+          dialog.showMessageBox(mainWindow, {
+            type: "error",
+            title: "Update Failed",
+            message: `Failed to update Tritium: ${error.message}`,
+            buttons: ["OK"],
+          });
+          reject(error);
+          return;
+        }
+        console.log(`Update output: ${stdout}`);
+        if (stderr) {
+          console.error(`Update stderr: ${stderr}`);
+        }
+        resolve();
       });
     });
-    dialog.showMessageBox(mainWindow, {
+
+    await dialog.showMessageBox(mainWindow, {
       type: "info",
       title: "Update Complete",
       message:
-        "Tritium has been updated successfully. Please restart the application.",
+        "Tritium has been updated successfully. The application will now restart.",
       buttons: ["OK"],
     });
+
+    const currentAppPath = app.getPath("exe");
+    const appDir = path.dirname(currentAppPath);
+    const newAppPath = path.join("/Applications", "Tritium.app");
+
+    const scriptPath = path.join(os.tmpdir(), "tritium_restart.sh");
+    const script = `#!/bin/bash
+# Wait a moment for the app to fully quit
+sleep 2
+
+# Remove the old app if it's not in Applications
+if [[ "${currentAppPath}" != "/Applications/Tritium.app"* ]]; then
+  echo "Removing old app at: ${currentAppPath}"
+  rm -rf "${appDir}"
+fi
+
+# Start the new Tritium app
+if [ -d "${newAppPath}" ]; then
+  echo "Starting new Tritium app"
+  open "${newAppPath}"
+else
+  echo "New Tritium app not found at ${newAppPath}"
+fi
+
+# Clean up this script
+rm -f "${scriptPath}"
+`;
+
+    fs.writeFileSync(scriptPath, script);
+    fs.chmodSync(scriptPath, 0o755);
+
+    exec(`nohup "${scriptPath}" > /dev/null 2>&1 &`);
+
+    app.quit();
   } catch (error) {
+    console.error("Update failed:", error);
     dialog.showMessageBox(mainWindow, {
       type: "error",
       title: "Update Failed",
