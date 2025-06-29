@@ -50,6 +50,10 @@ const newWorkspaceBtn = document.getElementById("new-workspace-btn");
 const clearWorkspaceBtn = document.getElementById("clear-workspace-btn");
 const vibrancyToggle = document.getElementById("vibrancyToggle");
 const scriptHubSelect = document.getElementById("scriptHub");
+const discordBtn = document.getElementById("discord-button");
+const discordDialog = document.getElementById("discordDialog");
+const joinDiscordBtn = document.getElementById("joinDiscord");
+const skipDiscordBtn = document.getElementById("skipDiscord");
 
 let editors = {};
 let savedScripts = [];
@@ -148,6 +152,54 @@ generateBtn.addEventListener("click", async () => {
 cancelBtn.addEventListener("click", () => {
   copilotPrompter.classList.remove("visible");
 });
+
+discordBtn.addEventListener("click", () => {
+  openDiscordLink();
+});
+
+joinDiscordBtn.addEventListener("click", () => {
+  openDiscordLink();
+  closeDiscordDialog();
+  setLocalStorage("discordPromptShown", "true");
+});
+
+skipDiscordBtn.addEventListener("click", () => {
+  closeDiscordDialog();
+  setLocalStorage("discordPromptShown", "true");
+});
+
+function openDiscordLink() {
+  if (isElectron) {
+    try {
+      require("electron").shell.openExternal("https://discord.gg/7Ds6JvpqQK");
+    } catch (error) {
+      console.warn("Failed to open external link:", error);
+      window.open("https://discord.gg/7Ds6JvpqQK", "_blank");
+    }
+  } else {
+    window.open("https://discord.gg/7Ds6JvpqQK", "_blank");
+  }
+}
+
+function showDiscordDialog() {
+  discordDialog.classList.add("open");
+}
+
+function closeDiscordDialog() {
+  discordDialog.classList.add("closing");
+  setTimeout(() => {
+    discordDialog.classList.remove("open", "closing");
+  }, 350);
+}
+
+function checkFirstTimeUser() {
+  const hasShownDiscordPrompt = getLocalStorage("discordPromptShown", "false");
+  if (hasShownDiscordPrompt === "false") {
+    setTimeout(() => {
+      showDiscordDialog();
+    }, 1000);
+  }
+}
 
 toggleConsole.addEventListener("click", function () {
   if (!consoleExpanded) {
@@ -2295,6 +2347,7 @@ function restructureDOM() {
 window.addEventListener("DOMContentLoaded", () => {
   restructureDOM();
   addWorkspaceSidebar();
+  checkFirstTimeUser();
 });
 
 window.addEventListener("beforeunload", () => {

@@ -348,7 +348,6 @@ function createWindow() {
     icon: __dirname + "./icon.png",
     title: "Tritium",
   });
-
   mainWindow.setMenuBarVisibility(false);
 
   mainWindow.webContents.on("before-input-event", (event, input) => {
