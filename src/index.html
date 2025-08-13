@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Tritium</title>
+    <meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      data-name="vs/editor/editor.main"
+      href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/editor/editor.main.min.css"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <div class="top-bar">
+    <div class="top-bar-title">Tritium</div>
+    <div class="port-selector-wrapper" id="portSelectorWrapper">
+      <label for="portSelect" class="port-select-label">Port</label>
+      <select
+        id="portSelect"
+        class="port-select"
+        title="Select backend port"
+        aria-hidden="true"
+        tabindex="-1"
+      ></select>
+      <div class="port-dropdown" id="portDropdown">
+        <button
+          type="button"
+          class="port-dropdown-toggle"
+          id="portDropdownToggle"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+        >
+          <span id="portDropdownLabel">--</span>
+          <i class="fa fa-chevron-down" aria-hidden="true"></i>
+        </button>
+        <div
+          class="port-dropdown-menu"
+          id="portDropdownMenu"
+          role="listbox"
+          aria-label="Select Port"
+        ></div>
+      </div>
+      <span
+        id="portStatusDot"
+        class="port-status-dot"
+        title="Port status"
+        aria-label="Port status indicator"
+      ></span>
+    </div>
+  </div>
+  <body>
+    <div class="workspace-sidebar" id="workspace-sidebar">
+      <div class="workspace-header">
+        <div class="workspace-title">
+          <i class="fas fa-folder"></i>
+          <span>Workspaces</span>
+        </div>
+        <div class="workspace-actions">
+          <button
+            id="new-workspace-btn"
+            class="small-button workspace-btn"
+            title="New Workspace"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+          <button
+            id="clear-workspace-btn"
+            class="small-button workspace-btn"
+            title="Clear Workspaces"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="workspaces-list" id="workspaces-list"></div>
+    </div>
+    <div class="container">
+      <div class="tabs-bar">
+        <div class="tabs" id="tabs"></div>
+        <div class="button-row" style="display: flex; gap: 6px">
+          <button
+            id="sidebar-toggle-btn"
+            class="medium-button sidebar-toggle-btn"
+            title="Toggle Sidebar"
+          >
+            <i class="fa-solid fa-cloud"></i>
+          </button>
+          <button
+            id="new-tab-btn"
+            class="medium-button add-tab-btn"
+            title="New Tab"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="editor-container" id="editor-container">
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+
+      <div class="prompter" id="copilot-prompter">
+        <textarea
+          id="promptInput"
+          placeholder="What kind of script do you want?"
+        ></textarea>
+        <div class="prompter-buttons">
+          <button id="generateBtn" class="prompter-button generate-btn">
+            Generate
+          </button>
+          <button id="cancelBtn" class="prompter-button cancel-btn">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="console-container">
+        <div class="console-header">
+          <span>Console</span>
+          <div class="console-button-row" style="display: flex; gap: 8px">
+            <button
+              class="medium-button console-btn"
+              id="copyConsole"
+              title="Copy Console"
+            >
+              <i class="fas fa-copy"></i>
+            </button>
+            <button
+              class="medium-button console-btn"
+              id="clearConsole"
+              title="Clear Console"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="console-output" id="consoleOutput"></div>
+      </div>
+      <footer>
+        <button
+          class="button toggleConsole"
+          id="toggleConsole"
+          title="Toggle Console"
+        >
+          <i class="fa-solid fa-arrows-up-down"></i>
+        </button>
+        <button id="save-button" class="button save-button" title="Save">
+          <i class="fas fa-save"></i>
+        </button>
+        <button id="workspace-toggle-btn" class="button workspace-toggle-btn">
+          <i class="fas fa-briefcase"></i>
+        </button>
+        <button
+          id="settings-button"
+          class="button settings-button"
+          title="Settings"
+        >
+          <i class="fas fa-cog"></i>
+        </button>
+        <button
+          id="copilot-button"
+          class="button copilot-button"
+          title="Tritium Copilot"
+        >
+          <i class="fa-solid fa-robot"></i>
+        </button>
+        <button
+          id="discord-button"
+          class="button discord-button"
+          title="Join Discord"
+        >
+          <i class="fab fa-discord"></i>
+        </button>
+        <div class="rgggg">
+          <button
+            id="roblox-button"
+            class="button roblox-button"
+            title="Launch Roblox"
+          >
+            <img
+              class="roblox-svg-icon"
+              src="assets/roblox_icon.svg"
+              alt="Roblox Logo"
+            />
+          </button>
+        </div>
+        <button id="exec-button" class="exec-button">
+          <i class="fas fa-play"></i>
+        </button>
+      </footer>
+    </div>
+    <div class="sidebar" id="sidebar">
+      <input type="text" id="searchBox" placeholder="Search scripts..." />
+      <div class="scripts" id="scripts"></div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="context-menu" id="contextMenu">
+      <div class="context-menu-item" id="renameScript">Rename</div>
+      <div class="context-menu-item" id="deleteScript">Delete</div>
+      <div class="context-menu-separator"></div>
+      <div class="context-menu-item" id="autoExecuteScript">
+        AutoExecute
+        <span class="context-menu-checkbox" id="autoExecuteCheckbox">✓</span>
+      </div>
+    </div>
+    <div class="settings-pane" id="settingsPane">
+      <div class="settings-content">
+        <h2>Settings</h2>
+        <div class="settings-group">
+          <label for="glowMode">Graphics</label>
+          <select id="glowMode">
+            <option value="default">default</option>
+            <option value="old">og</option>
+            <option value="high">drugs</option>
+          </select>
+        </div>
+        <div class="settings-group">
+          <label for="accentColorInput">Accent</label>
+          <div class="setting-control">
+            <input
+              id="accentColorInput"
+              type="text"
+              maxlength="6"
+              placeholder="7FB4FF"
+              class="accent-color-input"
+            />
+            <button
+              class="reset-btn"
+              id="resetColor"
+              title="Reset Accent Color"
+            >
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label for="vibrancyToggle">Vibrancy</label>
+          <div class="setting-control">
+            <select id="vibrancyToggle">
+              <option value="on" selected>On</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label for="scriptHub">Script Hub</label>
+          <div class="setting-control">
+            <select id="scriptHub">
+              <option value="both" selected>Both</option>
+              <option value="scriptblox">ScriptBlox</option>
+              <option value="rscripts">Rscripts</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-group">
+          <button class="update-btn" id="updateHydrogen">
+            Update Hydrogen
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="rename-dialog" id="renameDialog">
+      <div class="rename-content">
+        <h2>Rename before saving</h2>
+        <input type="text" id="renameInput" placeholder="Enter script name" />
+        <div class="rename-buttons">
+          <button id="confirmRename" class="button">Save</button>
+          <button id="cancelRename" class="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="discord-dialog" id="discordDialog">
+      <div class="discord-content">
+        <div class="discord-header">
+          <div class="discord-icon">
+            <i class="fab fa-discord"></i>
+          </div>
+          <h2>Welcome to Tritium!</h2>
+        </div>
+        <div class="discord-body">
+          <p>
+            Join our Discord community for support, updates, and to connect with
+            other users!
+          </p>
+          <div class="discord-features">
+            <div class="feature-item">
+              <i class="fas fa-headset"></i>
+              <span>Get instant support</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-bell"></i>
+              <span>Stay updated with new releases</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-users"></i>
+              <span>Connect with the community</span>
+            </div>
+          </div>
+        </div>
+        <div class="discord-buttons">
+          <button id="joinDiscord" class="button discord-join-btn">
+            <i class="fab fa-discord"></i>
+            Join Discord
+          </button>
+          <button id="skipDiscord" class="button discord-skip-btn">
+            Maybe Later
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.nodeRequire = window.require;
+      window.nodeModule = window.module;
+      window.nodeProcess = window.process;
+
+      window.require = undefined;
+      window.module = undefined;
+      window.process = undefined;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
+    <script>
+      window.amdRequire = window.require;
+      window.amdDefine = window.define;
+
+      (function () {
+        const base =
+          "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/";
+        window.MonacoEnvironment = {
+          getWorker: function () {
+            const workerSrc =
+              "data:text/javascript;charset=utf-8," +
+              encodeURIComponent(
+                'self.MonacoEnvironment={baseUrl:"' +
+                  base +
+                  '"};importScripts("' +
+                  base +
+                  'vs/base/worker/workerMain.min.js");',
+              );
+            return new Worker(workerSrc, { type: "classic" });
+          },
+        };
+        if (window.amdRequire && window.amdRequire.config) {
+          window.amdRequire.config({ paths: { vs: base + "vs" } });
+        }
+      })();
+
+      window.require = window.nodeRequire;
+      window.module = window.nodeModule;
+      window.process = window.nodeProcess;
+    </script>
+    <script src="main.js"></script>
+  </body>
+</html>

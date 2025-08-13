@@ -1,0 +1,21 @@
+{
+  "name": "Tritium",
+  "version": "4.0.0",
+  "description": "MacSploit custom ui",
+  "author": "phantom8015",
+  "dependencies": {
+    "@google-cloud/vertexai": "^1.10.0",
+    "chokidar": "^4.0.3",
+    "net": "^1.0.2",
+    "node-fetch": "^2.7.0",
+    "sudo-prompt": "^9.2.1"
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "./build.sh",
+    "pretty": "prettier --write \"./*.{js,css,html}\""
+  },
+  "devDependencies": {
+    "electron": "^29.4.6"
+  }
+}
