@@ -1,5 +1,5 @@
 # Tritium
-A custom Hydrogen UI made in Electron
+A custom MacSploit UI made in Electron
 
 ## Features
 - Script hub
