@@ -42,7 +42,7 @@ const copilotPrompter = document.getElementById("copilot-prompter");
 const promptInput = document.getElementById("promptInput");
 const generateBtn = document.getElementById("generateBtn");
 const cancelBtn = document.getElementById("cancelBtn");
-const hydroUpdateBtn = document.getElementById("updateHydrogen");
+const msUpdateBtn = document.getElementById("updateMacSploit");
 const workspacesList = document.getElementById("workspaces-list");
 const workspaceSidebar = document.getElementById("workspace-sidebar");
 const workspaceToggleBtn = document.getElementById("workspace-toggle-btn");
@@ -348,19 +348,19 @@ clearWorkspaceBtn.addEventListener("click", () => {
   }
 });
 
-hydroUpdateBtn.addEventListener("click", async () => {
+msUpdateBtn.addEventListener("click", async () => {
   settingsPane.classList.add("loading");
-  hydroUpdateBtn.innerHTML = "Updating...";
+  msUpdateBtn.innerHTML = "Updating...";
   try {
     updating = true;
-    await ipcRenderer.invoke("hydro-update");
+    await ipcRenderer.invoke("ms-update");
     updating = false;
-    showToast("Hydrogen updated successfully");
+    showToast("MacSploit updated successfully");
   } catch (error) {
     console.error(error);
-    showToast("Error updating Hydrogen", true);
+    showToast("Error updating MacSploit", true);
   } finally {
-    hydroUpdateBtn.innerHTML = "Update Hydrogen";
+    msUpdateBtn.innerHTML = "Update MacSploit";
   }
 });
 
@@ -1383,8 +1383,7 @@ function persistSavedScripts() {
 function loadAutoExecuteScripts() {
   let autoexecuteScriptse = getLocalStorage("autoExecuteScripts", []);
   const autoexecDir = path.join(
-    require("os").homedir() + "/Hydrogen",
-    "autoexecute",
+    require("os").homedir() + "/Documents/MacSploit Automatic Execution",
   );
   if (!fs.existsSync(autoexecDir)) {
     fs.mkdirSync(autoexecDir, { recursive: true });
@@ -2006,7 +2005,7 @@ document
 async function loadupdated() {
   showToast("Loading scripts...");
   try {
-    const scriptHub = localStorage.getItem("scriptHub") || "both";
+    const scriptHub = localStorage.getItem("scriptHub") || "rscripts";
 
     let scriptbloxScripts = [];
     let rscriptsScripts = [];

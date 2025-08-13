@@ -20,6 +20,50 @@ let serverPort = null;
 let lastError = null;
 let spotlightWindow = null;
 
+async function runMacSploitInstall() {
+  const scriptUrl = "https://git.raptor.fun/main/install.sh";
+  const tmpFile = path.join(os.tmpdir(), `macsploit_install_${Date.now()}.sh`);
+  try {
+    const res = await fetch(scriptUrl, { timeout: 15000 }).catch((e) => {
+      throw new Error(`Download failed: ${e.message}`);
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const text = await res.text();
+    if (!text || text.length < 50) {
+      throw new Error("Downloaded install script is empty or too small");
+    }
+    fs.writeFileSync(tmpFile, text, { mode: 0o755 });
+  } catch (e) {
+    throw new Error(`Unable to prepare MacSploit installer: ${e.message}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const quoted = tmpFile.replace(/"/g, '\\"');
+
+    const defaultPath =
+      "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+    const command = `export PATH=\"$PATH:${defaultPath}\"; cd ~; echo '--- MacSploit updater env ---'; (env | sort); echo '--- Running script ---'; /bin/bash -l \"${quoted}\" 2>&1; status=$?; echo \n'--- Script exit status:' $status; exit $status`;
+    sudo.exec(
+      command,
+      { name: "MacSploit Updater" },
+      (error, stdout, stderr) => {
+        try {
+          fs.unlinkSync(tmpFile);
+        } catch (_) {}
+        if (error) {
+          return reject(
+            new Error(`${error.message}${stderr ? `\n${stderr}` : ""}`),
+          );
+        }
+        if (stderr && /error|failed/i.test(stderr)) {
+          return reject(new Error(stderr.trim()));
+        }
+        resolve(stdout);
+      },
+    );
+  });
+}
+
 ipcMain.on("invokeAction", function (event, data) {
   console.log("Received IPC message:", data);
 
@@ -46,15 +90,23 @@ ipcMain.handle("show-save-dialog", async () => {
   });
 });
 
-ipcMain.handle("hydro-update", async () => {
+ipcMain.handle("ms-update", async () => {
   return new Promise((resolve, reject) => {
-    const command = 'bash -c "$(curl -fsSL https://www.hydrogen.lat/install)"';
-    const options = { name: "Hydrogen Updater" };
-
-    sudo.exec(command, options, (error, stdout, stderr) => {
-      if (error) return reject(error);
-      resolve(stdout || stderr);
-    });
+    runMacSploitInstall()
+      .then((out) => {
+        console.log(`MacSploit update output: ${out}`);
+        resolve();
+      })
+      .catch((err) => {
+        console.error("MacSploit update failed:", err);
+        dialog.showMessageBox(mainWindow, {
+          type: "error",
+          title: "Update Failed",
+          message: `Failed to update MacSploit: ${err.message}`,
+          buttons: ["OK"],
+        });
+        reject(err);
+      });
   });
 });
 
@@ -71,6 +123,28 @@ async function checkForUpdates() {
 
     const current = currentVersion.split(".").map(Number);
     const latest = latestVersion.split(".").map(Number);
+    const macSploitVersion = await fetch(
+      "https://www.raptor.fun/main/version.json",
+    );
+    const macSploitData = await macSploitVersion.json();
+    const msVersion = macSploitData.relVersion;
+    if (localStorage.getItem("macSploitVersion")) {
+      if (!localStorage.getItem("macSploitVersion") === msVersion) {
+        const choice = await dialog.showMessageBox(mainWindow, {
+          type: "info",
+          title: "MacSploit Update Available",
+          message: `A new version of MacSploit (${latestVersion}) is available!\nWould you like to update now?`,
+          buttons: ["Update", "Later"],
+          defaultId: 0,
+        });
+
+        if (choice.response === 0) {
+          await msUpdate();
+        }
+      }
+    }
+
+    localStorage.setItem("macSploitVersion", msVersion);
 
     for (let i = 0; i < 3; i++) {
       if (latest[i] > current[i]) {
@@ -90,6 +164,59 @@ async function checkForUpdates() {
     }
   } catch (error) {
     console.error("Error checking for updates:", error);
+  }
+}
+
+async function msUpdate() {
+  try {
+    const output = await runMacSploitInstall();
+    console.log(`MacSploit update output: ${output}`);
+
+    await dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "MacSploit Update Complete",
+      message:
+        "MacSploit has been updated successfully. The application will now restart.",
+      buttons: ["OK"],
+    });
+
+    const currentAppPath = app.getPath("exe");
+    const appDir = path.dirname(currentAppPath);
+    const newAppPath = path.join("/Applications", "Tritium.app");
+
+    const scriptPath = path.join(os.tmpdir(), "tritium_restart.sh");
+    const script = `#!/bin/bash
+sleep 2
+
+if [[ "${currentAppPath}" != "/Applications/Tritium.app"* ]]; then
+  echo "Removing old app at: ${currentAppPath}"
+  rm -rf "${appDir}"
+fi
+
+if [ -d "${newAppPath}" ]; then
+  echo "Starting new Tritium app"
+  open "${newAppPath}"
+else
+  echo "New Tritium app not found at ${newAppPath}"
+fi
+
+rm -f "${scriptPath}"
+`;
+
+    fs.writeFileSync(scriptPath, script);
+    fs.chmodSync(scriptPath, 0o755);
+
+    exec(`nohup "${scriptPath}" > /dev/null 2>&1 &`);
+
+    app.quit();
+  } catch (error) {
+    console.error("Update failed:", error);
+    dialog.showMessageBox(mainWindow, {
+      type: "error",
+      title: "Update Failed",
+      message: `Failed to update Tritium: ${error.message}`,
+      buttons: ["OK"],
+    });
   }
 }
 

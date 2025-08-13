@@ -9,7 +9,7 @@ const scriptSuggestionsContainer = document.getElementById(
 );
 const executeScriptButton = document.getElementById("execute-button");
 
-const scriptsBaseDirectory = path.join(os.homedir(), "Documents", "Hydrogen");
+const scriptsBaseDirectory = path.join(os.homedir(), "Documents", "Tritium");
 
 function applyAccentColor() {
   try {
