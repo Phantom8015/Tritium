@@ -18,49 +18,34 @@ const net = require("net");
 let mainWindow = null;
 let serverPort = null;
 let lastError = null;
+let localStorage = require("electron-localstorage");
+const { stdout } = require("process");
 let spotlightWindow = null;
 
 async function runMacSploitInstall() {
-  const scriptUrl = "https://git.raptor.fun/main/install.sh";
-  const tmpFile = path.join(os.tmpdir(), `macsploit_install_${Date.now()}.sh`);
-  try {
-    const res = await fetch(scriptUrl, { timeout: 15000 }).catch((e) => {
-      throw new Error(`Download failed: ${e.message}`);
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    const text = await res.text();
-    if (!text || text.length < 50) {
-      throw new Error("Downloaded install script is empty or too small");
-    }
-    fs.writeFileSync(tmpFile, text, { mode: 0o755 });
-  } catch (e) {
-    throw new Error(`Unable to prepare MacSploit installer: ${e.message}`);
-  }
-
   return new Promise((resolve, reject) => {
-    const quoted = tmpFile.replace(/"/g, '\\"');
-
-    const defaultPath =
-      "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-    const command = `export PATH=\"$PATH:${defaultPath}\"; cd ~; echo '--- MacSploit updater env ---'; (env | sort); echo '--- Running script ---'; /bin/bash -l \"${quoted}\" 2>&1; status=$?; echo \n'--- Script exit status:' $status; exit $status`;
-    sudo.exec(
-      command,
-      { name: "MacSploit Updater" },
+    const script =
+      'cd "$HOME" && curl -fsSL "https://git.raptor.fun/user/install.sh" | bash';
+    exec(
+      script,
+      { env: process.env, timeout: 5 * 60 * 1000 },
       (error, stdout, stderr) => {
-        try {
-          fs.unlinkSync(tmpFile);
-        } catch (_) {}
         if (error) {
+          console.error("MacSploit install stderr:", stderr);
           return reject(
-            new Error(`${error.message}${stderr ? `\n${stderr}` : ""}`),
+            new Error(`MacSploit installation failed: ${error.message}`),
           );
         }
-        if (stderr && /error|failed/i.test(stderr)) {
-          return reject(new Error(stderr.trim()));
+        if (stderr) {
+          console.warn("MacSploit install warnings:", stderr);
         }
-        resolve(stdout);
+        console.log("MacSploit installation output:", stdout);
+        resolve(stdout.trim());
       },
     );
+    if (stdout.includes("Enter license")) {
+      return runMacSploitInstall();
+    }
   });
 }
 
@@ -91,23 +76,20 @@ ipcMain.handle("show-save-dialog", async () => {
 });
 
 ipcMain.handle("ms-update", async () => {
-  return new Promise((resolve, reject) => {
-    runMacSploitInstall()
-      .then((out) => {
-        console.log(`MacSploit update output: ${out}`);
-        resolve();
-      })
-      .catch((err) => {
-        console.error("MacSploit update failed:", err);
-        dialog.showMessageBox(mainWindow, {
-          type: "error",
-          title: "Update Failed",
-          message: `Failed to update MacSploit: ${err.message}`,
-          buttons: ["OK"],
-        });
-        reject(err);
-      });
-  });
+  try {
+    const out = await runMacSploitInstall();
+    console.log("MacSploit update output:", out);
+    return { success: true };
+  } catch (err) {
+    console.error("MacSploit update failed:", err);
+    dialog.showMessageBox(mainWindow, {
+      type: "error",
+      title: "Update Failed",
+      message: `Failed to update MacSploit: ${err.message}`,
+      buttons: ["OK"],
+    });
+    return { success: false, error: err.message };
+  }
 });
 
 async function checkForUpdates() {
@@ -129,11 +111,11 @@ async function checkForUpdates() {
     const macSploitData = await macSploitVersion.json();
     const msVersion = macSploitData.relVersion;
     if (localStorage.getItem("macSploitVersion")) {
-      if (!localStorage.getItem("macSploitVersion") === msVersion) {
+      if (localStorage.getItem("macSploitVersion") !== msVersion) {
         const choice = await dialog.showMessageBox(mainWindow, {
           type: "info",
           title: "MacSploit Update Available",
-          message: `A new version of MacSploit (${latestVersion}) is available!\nWould you like to update now?`,
+          message: `A new version of MacSploit (${msVersion}) is available!\nWould you like to update now?`,
           buttons: ["Update", "Later"],
           defaultId: 0,
         });
