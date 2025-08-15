@@ -21,49 +21,72 @@ let lastError = null;
 let localStorage = require("electron-localstorage");
 let spotlightWindow = null;
 
-async function runMacSploitInstall() {
+function runMacSploitInstall() {
   return new Promise((resolve, reject) => {
+    const sentinel = path.join(os.tmpdir(), "macsploit_install_done");
     try {
-      if (process.platform !== "darwin") {
-        return reject(
-          new Error("MacSploit install is only supported on macOS"),
-        );
-      }
+      if (fs.existsSync(sentinel)) fs.unlinkSync(sentinel);
+    } catch (_) {}
 
-      if (runMacSploitInstall._running) {
-        return resolve("MacSploit installer already launched");
-      }
-      runMacSploitInstall._running = true;
-
-      const tmpScriptPath = path.join(os.tmpdir(), "macsploit_install.command");
-      const scriptContents = `#!/bin/bash\n\ncd ~ || exit 1\necho \"Starting MacSploit install...\"\n# Run installer with an attached TTY so prompts (if any) work\ncurl -s \"https://git.raptor.fun/main/install.sh\" | bash </dev/tty\nEXIT_CODE=$?\nif [ $EXIT_CODE -ne 0 ]; then\n  echo \"MacSploit install failed with exit code $EXIT_CODE\"\nelse\n  echo \"MacSploit install finished successfully.\"\nfi\necho \"Press Return to close this window...\"\nread _\n`;
-      try {
-        fs.writeFileSync(tmpScriptPath, scriptContents, { mode: 0o755 });
-      } catch (err) {
-        runMacSploitInstall._running = false;
-        return reject(
-          new Error("Failed to create temp install script: " + err.message),
-        );
-      }
-
-      const openCmd = `open -a Terminal "${tmpScriptPath}"`;
-      exec(openCmd, (error, stdout, stderr) => {
-        runMacSploitInstall._running = false;
-        if (error) {
-          return reject(
-            new Error(`Failed to launch installer: ${error.message}`),
-          );
-        }
-        if (stderr) {
-          console.warn("MacSploit install stderr:", stderr);
-        }
-        console.log("MacSploit installer launched via", tmpScriptPath);
-        resolve(stdout || "Launched");
-      });
+    const applescriptPath = path.join(os.tmpdir(), "macsploit_install.scpt");
+    const bashCmd =
+      'cd ~ && curl -s "https://git.raptor.fun/main/install.sh" | bash </dev/tty; echo $? > ' +
+      JSON.stringify(sentinel);
+    const applescript = `tell application "Terminal"\n  activate\n  do script ${JSON.stringify(bashCmd)}\nend tell\n`;
+    try {
+      fs.writeFileSync(applescriptPath, applescript, "utf8");
     } catch (err) {
-      runMacSploitInstall._running = false;
-      reject(err);
+      return reject(err);
     }
+
+    exec(`osascript ${JSON.stringify(applescriptPath)}`, (error) => {
+      if (error) {
+        return reject(error);
+      }
+
+      const start = Date.now();
+      const maxDurationMs = 1000 * 60 * 30;
+      const pollInterval = 4000;
+      const interval = setInterval(() => {
+        try {
+          if (fs.existsSync(sentinel)) {
+            clearInterval(interval);
+            let exitCode = "1";
+            try {
+              exitCode = fs.readFileSync(sentinel, "utf8").trim();
+              fs.unlinkSync(sentinel);
+            } catch (_) {}
+            if (exitCode === "0") {
+              try {
+                dialog.showMessageBox(mainWindow, {
+                  type: "info",
+                  title: "MacSploit Install Complete",
+                  message:
+                    "MacSploit installation finished successfully. Tritium will now restart.",
+                  buttons: ["OK"],
+                });
+              } catch (_) {}
+            } else {
+              dialog.showMessageBox(mainWindow, {
+                type: "error",
+                title: "MacSploit Install Failed",
+                message: `MacSploit installer exited with code ${exitCode}.`,
+                buttons: ["OK"],
+              });
+            }
+          } else if (Date.now() - start > maxDurationMs) {
+            clearInterval(interval);
+            dialog.showMessageBox(mainWindow, {
+              type: "warning",
+              title: "MacSploit Install Timeout",
+              message: "Timed out waiting for MacSploit installer to finish.",
+              buttons: ["OK"],
+            });
+          }
+        } catch (e) {}
+      }, pollInterval);
+      resolve("started");
+    });
   });
 }
 
