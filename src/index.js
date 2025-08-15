@@ -19,32 +19,50 @@ let mainWindow = null;
 let serverPort = null;
 let lastError = null;
 let localStorage = require("electron-localstorage");
-const { stdout } = require("process");
 let spotlightWindow = null;
 
 async function runMacSploitInstall() {
   return new Promise((resolve, reject) => {
-    const script =
-      'cd "$HOME" && curl -fsSL "https://git.raptor.fun/user/install.sh" | bash';
-    exec(
-      script,
-      { env: process.env, timeout: 5 * 60 * 1000 },
-      (error, stdout, stderr) => {
+    try {
+      if (process.platform !== "darwin") {
+        return reject(
+          new Error("MacSploit install is only supported on macOS"),
+        );
+      }
+
+      if (runMacSploitInstall._running) {
+        return resolve("MacSploit installer already launched");
+      }
+      runMacSploitInstall._running = true;
+
+      const tmpScriptPath = path.join(os.tmpdir(), "macsploit_install.command");
+      const scriptContents = `#!/bin/bash\n\ncd ~ || exit 1\necho \"Starting MacSploit install...\"\n# Run installer with an attached TTY so prompts (if any) work\ncurl -s \"https://git.raptor.fun/main/install.sh\" | bash </dev/tty\nEXIT_CODE=$?\nif [ $EXIT_CODE -ne 0 ]; then\n  echo \"MacSploit install failed with exit code $EXIT_CODE\"\nelse\n  echo \"MacSploit install finished successfully.\"\nfi\necho \"Press Return to close this window...\"\nread _\n`;
+      try {
+        fs.writeFileSync(tmpScriptPath, scriptContents, { mode: 0o755 });
+      } catch (err) {
+        runMacSploitInstall._running = false;
+        return reject(
+          new Error("Failed to create temp install script: " + err.message),
+        );
+      }
+
+      const openCmd = `open -a Terminal "${tmpScriptPath}"`;
+      exec(openCmd, (error, stdout, stderr) => {
+        runMacSploitInstall._running = false;
         if (error) {
-          console.error("MacSploit install stderr:", stderr);
           return reject(
-            new Error(`MacSploit installation failed: ${error.message}`),
+            new Error(`Failed to launch installer: ${error.message}`),
           );
         }
         if (stderr) {
-          console.warn("MacSploit install warnings:", stderr);
+          console.warn("MacSploit install stderr:", stderr);
         }
-        console.log("MacSploit installation output:", stdout);
-        resolve(stdout.trim());
-      },
-    );
-    if (stdout.includes("Enter license")) {
-      return runMacSploitInstall();
+        console.log("MacSploit installer launched via", tmpScriptPath);
+        resolve(stdout || "Launched");
+      });
+    } catch (err) {
+      runMacSploitInstall._running = false;
+      reject(err);
     }
   });
 }
