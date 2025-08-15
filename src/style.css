@@ -146,7 +146,7 @@ body::-webkit-scrollbar,
 .button:hover i,
 .small-button:hover i,
 .medium-button:hover i,
-.button:hover img.roblox-svg-icon {
+.button:hover .roblox-svg-icon {
   color: var(--accent-color);
   transition: color 0.3s;
   filter: brightness(0.85);
@@ -334,6 +334,21 @@ select:focus {
   font-size: 16px;
   margin-bottom: 5px;
 }
+.searched-script .script-title,
+.searched-script .script-game,
+.searched-script .script-description,
+.searched-script .script-author,
+.searched-script .script-stats,
+.searched-script .script-source {
+  -webkit-text-stroke: 0.7px rgba(0, 0, 0, 0.75);
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 1px rgba(0, 0, 0, 0.6),
+    0 1px 1px rgba(0, 0, 0, 0.6),
+    1px 0 1px rgba(0, 0, 0, 0.6),
+    -1px 0 1px rgba(0, 0, 0, 0.6),
+    0 -1px 1px rgba(0, 0, 0, 0.6);
+}
 .script-game {
   font-size: 13px;
   color: #e5e9f0;
@@ -384,6 +399,12 @@ footer {
   padding: 0 20px;
   position: static;
   left: auto;
+
+  #toggleConsole.locked {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    filter: grayscale(40%);
+  }
   right: auto;
   bottom: auto;
   box-sizing: border-box;
@@ -495,12 +516,18 @@ footer {
   font-size: 22px;
 }
 
-.button img.roblox-svg-icon {
+.button .roblox-svg-icon {
   width: 24px;
   height: 24px;
+  display: inline-block;
+  color: #ffffff;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.3));
   margin-left: 6px;
   vertical-align: middle;
+  transition:
+    color 0.3s ease,
+    transform 0.25s ease,
+    filter 0.25s ease;
 }
 
 .toast {
@@ -1415,7 +1442,7 @@ footer {
   background: var(--accent-color);
 }
 :root {
-  --accent-color: var(--accent-color);
+  --accent-color: #7fb4ff;
 }
 .close-color-picker-btn {
   background: rgba(28, 28, 28, 0.3);
@@ -1559,7 +1586,6 @@ footer {
 }
 
 .discord-button {
-  background: linear-gradient(135deg, #5865f2, #4752c4);
   border: none;
   border-radius: 8px;
   color: white;

@@ -160,7 +160,11 @@
         <button id="save-button" class="button save-button" title="Save">
           <i class="fas fa-save"></i>
         </button>
-        <button id="workspace-toggle-btn" class="button workspace-toggle-btn">
+        <button
+          id="workspace-toggle-btn"
+          class="button workspace-toggle-btn"
+          title="Toggle Workspaces"
+        >
           <i class="fas fa-briefcase"></i>
         </button>
         <button
@@ -190,14 +194,27 @@
             class="button roblox-button"
             title="Launch Roblox"
           >
-            <img
+            <svg
               class="roblox-svg-icon"
-              src="assets/roblox_icon.svg"
-              alt="Roblox Logo"
-            />
+              viewBox="0 0 267 267"
+              width="24"
+              height="24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <title>Roblox</title>
+              <path
+                d="M65.4 15.6L15.6 201.7l186.2 49.9 49.7-186.2L65.4 15.6zm49.2 85.5l51.9 13.9-13.9 52-52-14 14-51.9z"
+                fill="currentColor"
+              />
+            </svg>
           </button>
         </div>
-        <button id="exec-button" class="exec-button">
+        <button
+          id="exec-button"
+          class="exec-button"
+          title="Execute Current Script"
+        >
           <i class="fas fa-play"></i>
         </button>
       </footer>
@@ -258,7 +275,7 @@
         <div class="settings-group">
           <label for="scriptHub">Script Hub</label>
           <div class="setting-control">
-            <select id="scriptHub">
+            <select id="scriptHub" title="Select Script Hub Source">
               <option value="both" selected>Both</option>
               <option value="scriptblox">ScriptBlox</option>
               <option value="rscripts">Rscripts</option>

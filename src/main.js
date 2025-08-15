@@ -20,7 +20,7 @@ const deleteScriptBtn = document.getElementById("deleteScript");
 const autoExecuteScriptBtn = document.getElementById("autoExecuteScript");
 const autoExecuteCheckbox = document.getElementById("autoExecuteCheckbox");
 const fs = require("fs");
-const { spawn } = require("child_process");
+const { spawn, exec } = require("child_process");
 const path = require("path");
 const { console } = require("inspector");
 const consoleOutput = document.getElementById("consoleOutput");
@@ -237,6 +237,88 @@ function setPortBadge(port, state) {
   if (port === selectedPort) {
     updatePortStatusVisual(state);
   }
+
+  if (!window.__portLockEvaluateTimer) {
+    window.__portLockEvaluateTimer = setTimeout(() => {
+      window.__portLockEvaluateTimer = null;
+      evaluateConsoleLock();
+    }, 120);
+  }
+}
+
+let consoleLockActive = false;
+let consoleLockReason = null;
+let lastOnlinePortCount = 0;
+
+function collapseConsole(forceIcon) {
+  if (!consoleContainer) return;
+  if (!consoleContainer.classList.contains("collapsed")) {
+    consoleContainer.classList.add("collapsed");
+  }
+  consoleExpanded = false;
+  if (
+    toggleConsole &&
+    (forceIcon || toggleConsole.innerHTML.indexOf("chevron-up") === -1)
+  ) {
+    toggleConsole.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+  }
+}
+
+function expandConsole() {
+  if (!consoleContainer) return;
+  consoleContainer.classList.remove("collapsed");
+  consoleExpanded = true;
+  if (toggleConsole) {
+    toggleConsole.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+  }
+}
+
+function evaluateConsoleLock() {
+  let onlineCount = 0;
+  for (let p = PORT_START; p <= PORT_END; p++) {
+    if (portStatusCache[p] === "online") onlineCount++;
+    if (onlineCount > 1) break;
+  }
+
+  let newLockActive = false;
+  let newReason = null;
+  if (onlineCount === 0) {
+    newLockActive = true;
+    newReason = "zero";
+  } else if (onlineCount > 1) {
+    newLockActive = true;
+    newReason = "multi";
+  }
+
+  if (newLockActive) {
+    collapseConsole(true);
+    if (!consoleLockActive || consoleLockReason !== newReason) {
+      consoleLockActive = true;
+      consoleLockReason = newReason;
+      if (toggleConsole) {
+        toggleConsole.classList.add("locked");
+        toggleConsole.title =
+          newReason === "multi"
+            ? "Multiple backend instances detected (console locked)"
+            : "No backend instance detected (console locked)";
+      }
+    }
+  } else {
+    if (consoleLockActive) {
+      consoleLockActive = false;
+      consoleLockReason = null;
+      if (toggleConsole) {
+        toggleConsole.classList.remove("locked");
+        toggleConsole.title = "Toggle Console";
+      }
+    }
+
+    if (lastOnlinePortCount === 0 && onlineCount === 1) {
+      expandConsole();
+    }
+  }
+
+  lastOnlinePortCount = onlineCount;
 }
 
 function pingPort(port, onDone) {
@@ -286,30 +368,10 @@ function pingAllPorts() {
 function queuePortStatusCheck(force = false) {
   if (typeof require !== "function") return;
   const now = Date.now();
-  if (!force && now - lastPortProbeTime < 1500) return;
-  lastPortProbeTime = now;
-  const net = require("net");
-  const socket = new net.Socket();
-  let handled = false;
-  socket.setTimeout(800);
-  socket.once("connect", () => {
-    handled = true;
-    updatePortStatusVisual("online");
-    socket.destroy();
-  });
-  function markOffline() {
-    if (handled) return;
-    handled = true;
-    updatePortStatusVisual("offline");
-    socket.destroy();
-  }
-  socket.once("timeout", markOffline);
-  socket.once("error", markOffline);
-  try {
-    socket.connect({ host: "127.0.0.1", port: selectedPort });
-  } catch (_) {
-    markOffline();
-  }
+
+  if (!force && now - lastAllPortsPingTime < 2500) return;
+  lastAllPortsPingTime = now;
+  pingAllPorts();
 }
 
 if (isElectron && ipcRenderer) {
@@ -321,6 +383,10 @@ if (isElectron && ipcRenderer) {
     }
   });
 }
+
+setInterval(() => {
+  queuePortStatusCheck();
+}, 5000);
 
 let editors = {};
 let savedScripts = [];
@@ -469,6 +535,14 @@ function checkFirstTimeUser() {
 }
 
 toggleConsole.addEventListener("click", function () {
+  if (consoleLockActive) {
+    const msg =
+      consoleLockReason === "multi"
+        ? "Multiple ports online; console locked until only one is active"
+        : "No ports online; console locked until Roblox is detected";
+    showToast(msg, true);
+    return;
+  }
   if (!consoleExpanded) {
     consoleContainer.classList.remove("collapsed");
     toggleConsole.style.transition = "transform 0.3s ease";
@@ -1661,6 +1735,8 @@ function createTab(name = "Untitled", content = "-- New script") {
   tab.addEventListener("dragover", handleDragOver);
   tab.addEventListener("dragend", handleDragEnd);
   tab.addEventListener("drop", handleDrop);
+  if (typeof scheduleWorkspaceAutosave === "function")
+    scheduleWorkspaceAutosave();
 }
 
 let draggedTab = null;
@@ -1836,6 +1912,44 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     saveCurrentScript();
   }
+
+  if (
+    e.altKey &&
+    !e.metaKey &&
+    !e.ctrlKey &&
+    !e.shiftKey &&
+    (e.key === "ArrowRight" || e.key === "ArrowLeft")
+  ) {
+    e.preventDefault();
+    if (e.key === "ArrowRight" && typeof toggleSidebar !== "undefined") {
+      toggleSidebar.click();
+    } else if (
+      e.key === "ArrowLeft" &&
+      typeof workspaceToggleBtn !== "undefined"
+    ) {
+      workspaceToggleBtn.click();
+    }
+  }
+
+  if (
+    e.altKey &&
+    !e.metaKey &&
+    !e.ctrlKey &&
+    !e.shiftKey &&
+    (e.key === "ArrowUp" || e.key === "ArrowDown")
+  ) {
+    e.preventDefault();
+    if (consoleLockActive) {
+      const msg =
+        consoleLockReason === "multi"
+          ? "Multiple ports online; console locked until only one is active"
+          : "No ports online; console locked until a backend is detected";
+      showToast(msg, true);
+      return;
+    }
+    if (e.key === "ArrowUp") expandConsole();
+    else if (e.key === "ArrowDown") collapseConsole();
+  }
 });
 
 function switchTab(id) {
@@ -1888,6 +2002,8 @@ function closeTab(forced, id) {
         currentTab = null;
       }
     }
+    if (typeof scheduleWorkspaceAutosave === "function")
+      scheduleWorkspaceAutosave();
   }
 }
 
@@ -1963,6 +2079,13 @@ function saveScriptContent(tab, scriptName) {
         renderSidebar();
       }
 
+      if (
+        !sidebar.classList.contains("open") &&
+        typeof toggleSidebar !== "undefined"
+      ) {
+        toggleSidebar.click();
+      }
+
       if (backupPath && fs.existsSync(backupPath)) {
         fs.unlinkSync(backupPath);
       }
@@ -1987,9 +2110,28 @@ document.getElementById("copyConsole").onclick = function () {
 };
 
 function launchRoblox() {
-  spawn("open /Applications/Roblox.app", {
-    shell: true,
-  });
+  const executablePath = "/Applications/Roblox.app/Contents/MacOS/RobloxPlayer";
+  try {
+    if (!fs.existsSync(executablePath)) {
+      showToast("Roblox executable not found", true);
+      return;
+    }
+    const child = spawn(executablePath, [], {
+      detached: true,
+      stdio: "ignore",
+    });
+    child.unref();
+  } catch (err) {
+    try {
+      const child = spawn("open", [executablePath], {
+        detached: true,
+        stdio: "ignore",
+      });
+      child.unref();
+    } catch (_) {
+      showToast("Failed to launch Roblox", true);
+    }
+  }
 }
 
 document
@@ -2285,7 +2427,11 @@ function getSettings() {
   return {
     glowMode: localStorage.getItem("glowMode") || "default",
     accentColor: localStorage.getItem("accentColor") || "#7FB4FF",
-    vibrancyEnabled: localStorage.getItem("vibrancyEnabled") === "true",
+
+    vibrancyEnabled:
+      localStorage.getItem("vibrancyEnabled") !== null
+        ? localStorage.getItem("vibrancyEnabled") === "true"
+        : true,
     scriptHub: localStorage.getItem("scriptHub") || "both",
   };
 }
@@ -2747,6 +2893,7 @@ function loadWorkspaces() {
 
 function saveWorkspaces() {
   setLocalStorage("workspaces", workspaces);
+  setLocalStorage("currentWorkspace", currentWorkspace);
 }
 
 function renderWorkspacesSidebar() {
@@ -2983,6 +3130,10 @@ window.addEventListener("DOMContentLoaded", () => {
   checkFirstTimeUser();
 });
 
-window.addEventListener("beforeunload", () => {
-  localStorage.removeItem("workspaces");
-});
+let workspaceAutosaveTimer = null;
+function scheduleWorkspaceAutosave() {
+  if (workspaceAutosaveTimer) clearTimeout(workspaceAutosaveTimer);
+  workspaceAutosaveTimer = setTimeout(() => {
+    saveCurrentWorkspaceTabs();
+  }, 500);
+}

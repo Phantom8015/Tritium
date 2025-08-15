@@ -61,8 +61,7 @@ function runMacSploitInstall() {
                 dialog.showMessageBox(mainWindow, {
                   type: "info",
                   title: "MacSploit Install Complete",
-                  message:
-                    "MacSploit installation finished successfully.",
+                  message: "MacSploit installation finished successfully.",
                   buttons: ["OK"],
                 });
               } catch (_) {}
