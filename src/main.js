@@ -1943,7 +1943,7 @@ document.addEventListener("keydown", (e) => {
       const msg =
         consoleLockReason === "multi"
           ? "Multiple ports online; console locked until only one is active"
-          : "No ports online; console locked until a backend is detected";
+          : "No ports online; console locked until Roblox is detected";
       showToast(msg, true);
       return;
     }
