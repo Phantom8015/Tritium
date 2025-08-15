@@ -422,6 +422,8 @@ msUpdateBtn.addEventListener("click", async () => {
     await ipcRenderer.invoke("ms-update");
     updating = false;
     showToast("MacSploit updated successfully");
+    localStorage.removeItem("msVersion");
+    location.reload();
   } catch (error) {
     console.error(error);
     showToast("Error updating MacSploit", true);

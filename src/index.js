@@ -193,44 +193,6 @@ async function msUpdate() {
   try {
     const output = await runMacSploitInstall();
     console.log(`MacSploit update output: ${output}`);
-
-    await dialog.showMessageBox(mainWindow, {
-      type: "info",
-      title: "MacSploit Update Complete",
-      message:
-        "MacSploit has been updated successfully. The application will now restart.",
-      buttons: ["OK"],
-    });
-
-    const currentAppPath = app.getPath("exe");
-    const appDir = path.dirname(currentAppPath);
-    const newAppPath = path.join("/Applications", "Tritium.app");
-
-    const scriptPath = path.join(os.tmpdir(), "tritium_restart.sh");
-    const script = `#!/bin/bash
-sleep 2
-
-if [[ "${currentAppPath}" != "/Applications/Tritium.app"* ]]; then
-  echo "Removing old app at: ${currentAppPath}"
-  rm -rf "${appDir}"
-fi
-
-if [ -d "${newAppPath}" ]; then
-  echo "Starting new Tritium app"
-  open "${newAppPath}"
-else
-  echo "New Tritium app not found at ${newAppPath}"
-fi
-
-rm -f "${scriptPath}"
-`;
-
-    fs.writeFileSync(scriptPath, script);
-    fs.chmodSync(scriptPath, 0o755);
-
-    exec(`nohup "${scriptPath}" > /dev/null 2>&1 &`);
-
-    app.quit();
   } catch (error) {
     console.error("Update failed:", error);
     dialog.showMessageBox(mainWindow, {
