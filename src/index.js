@@ -30,7 +30,7 @@ function runMacSploitInstall() {
 
     const applescriptPath = path.join(os.tmpdir(), "macsploit_install.scpt");
     const bashCmd =
-      'cd ~ && curl -s "https://git.raptor.fun/user/install.sh" | bash </dev/tty; echo $? > ' +
+      'cd ~ && curl -s "https://git.raptor.fun/main/install.sh" | bash </dev/tty; echo $? > ' +
       JSON.stringify(sentinel);
     const applescript = `tell application "Terminal"\n  activate\n  do script ${JSON.stringify(bashCmd)}\nend tell\n`;
     try {

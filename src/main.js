@@ -66,7 +66,6 @@ const PORT_END = 5563;
 let selectedPort = null;
 let lastPortStatus = null;
 let portPingCooldown = 0;
-let lastPortProbeTime = 0;
 let lastAllPortsPingTime = 0;
 
 function initPortSelector() {
@@ -2112,7 +2111,12 @@ document.getElementById("copyConsole").onclick = function () {
 };
 
 function launchRoblox() {
-  const executablePath = "/Applications/Roblox.app/Contents/MacOS/RobloxPlayer";
+  let executablePath = "/Applications/Roblox.app/Contents/MacOS/RobloxPlayer";
+  const userExecutablePath =
+    "~/Applications/Roblox.app/Contents/MacOS/RobloxPlayer";
+  if (fs.existsSync(userExecutablePath)) {
+    executablePath = userExecutablePath;
+  }
   try {
     if (!fs.existsSync(executablePath)) {
       showToast("Roblox executable not found", true);
