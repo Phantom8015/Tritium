@@ -310,6 +310,7 @@ select:focus {
 .searched-script:hover {
   background: rgba(35, 35, 35, 0.5);
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
+  transform: translateY(-2px);
 }
 .script-item.searched-script,
 .searched-script {
@@ -340,7 +341,6 @@ select:focus {
 .searched-script .script-author,
 .searched-script .script-stats,
 .searched-script .script-source {
-  -webkit-text-stroke: 0.7px rgba(0, 0, 0, 0.75);
   paint-order: stroke fill;
   text-shadow:
     0 0 1px rgba(0, 0, 0, 0.6),
@@ -1678,7 +1678,6 @@ footer {
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
 }
 

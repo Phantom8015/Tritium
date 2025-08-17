@@ -4,6 +4,7 @@ const {
   ipcMain,
   globalShortcut,
   dialog,
+  Menu,
 } = require("electron");
 const sudo = require("sudo-prompt");
 const fs = require("fs");
@@ -418,7 +419,6 @@ async function ligma(scriptContent) {
         Buffer.concat([header, Buffer.from(scriptContent), Buffer.from([0])]),
       );
       this.end();
-      console.log("F12 in Roblox to see script activity.");
     })
     .setTimeout(3000);
 }
@@ -465,27 +465,21 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
 
   try {
-    const { Menu } = require("electron");
-    const isMac = process.platform === "darwin";
     const template = [
-      ...(isMac
-        ? [
-            {
-              label: app.name,
-              submenu: [
-                { role: "about" },
-                { type: "separator" },
-                { role: "services" },
-                { type: "separator" },
-                { role: "hide" },
-                { role: "hideOthers" },
-                { role: "unhide" },
-                { type: "separator" },
-                { role: "quit" },
-              ],
-            },
-          ]
-        : []),
+      {
+        label: app.name,
+        submenu: [
+          { role: "about" },
+          { type: "separator" },
+          { role: "services" },
+          { type: "separator" },
+          { role: "hide" },
+          { role: "hideOthers" },
+          { role: "unhide" },
+          { type: "separator" },
+          { role: "quit" },
+        ],
+      },
       {
         label: "Edit",
         submenu: [
@@ -498,6 +492,20 @@ function createWindow() {
           { role: "pasteAndMatchStyle" },
           { role: "delete" },
           { role: "selectAll" },
+        ],
+      },
+      {
+        label: "View",
+        submenu: [
+          { role: "reload" },
+          { role: "forceReload" },
+          { role: "toggleDevTools" },
+          { type: "separator" },
+          { role: "resetZoom" },
+          { role: "zoomIn" },
+          { role: "zoomOut" },
+          { type: "separator" },
+          { role: "togglefullscreen" },
         ],
       },
     ];
