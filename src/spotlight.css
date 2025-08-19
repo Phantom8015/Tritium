@@ -30,8 +30,7 @@ html {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   border: none;
   user-select: none;
-  border-radius: 6px;
-  background-color: rgba(70, 70, 70, 0.2);
+  background-color: transparent;
   color: #e0e0e0;
   outline: none;
   margin-right: 8px;
@@ -88,9 +87,9 @@ html {
   font-size: 16px;
   user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  border-radius: 6px;
-  margin: 4px 8px;
-  background-color: rgba(32, 32, 32, 0.356);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: transparent;
   transition: all 0.2s ease-out;
   opacity: 0;
   transform: translateY(10px);
@@ -136,9 +135,10 @@ body.closing,
 }
 
 .suggestion-item:hover {
-  background-color: rgba(80, 80, 80, 0.8);
   transform: scale(1.02);
   transition: all 0.2s ease-out;
+  translate: 0 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion-item:active {
@@ -147,9 +147,8 @@ body.closing,
 }
 
 .suggestion-item.selected {
-  background-color: var(--accent-color);
+  border-color: var(--accent-color);
   color: white;
-  border-radius: 6px;
   transform: scale(1.02);
   transition: all 0.2s ease-out;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);

@@ -12,6 +12,7 @@ const path = require("path");
 const os = require("os");
 const fetch = require("node-fetch");
 const { version: currentVersion } = require("./package.json");
+const { nativeTheme } = require("electron");
 const { exec } = require("child_process");
 const START_PORT = 5553;
 const END_PORT = 5563;
@@ -372,16 +373,26 @@ ipcMain.on("hide-spotlight-window", () => {
   spotlightWindow = null;
 });
 
+function applyDarkVibrancy(enableMain, enableSpotlight) {
+  try {
+    if (enableMain && mainWindow) mainWindow.setVibrancy("hud");
+    else if (mainWindow) mainWindow.setVibrancy(null);
+    if (enableSpotlight && spotlightWindow) spotlightWindow.setVibrancy("hud");
+    else if (spotlightWindow) spotlightWindow.setVibrancy(null);
+  } catch (_) {}
+}
+
+let _vibrancyEnabledMain = true;
+let _vibrancyEnabledSpotlight = true;
+
 ipcMain.on("set-vibrancy", (event, enableVibrancy) => {
-  if (mainWindow) {
-    mainWindow.setVibrancy(enableVibrancy ? "under-window" : null);
-  }
+  _vibrancyEnabledMain = !!enableVibrancy;
+  applyDarkVibrancy(_vibrancyEnabledMain, _vibrancyEnabledSpotlight);
 });
 
 ipcMain.on("set-spvibrancy", (event, enableVibrancy) => {
-  if (spotlightWindow) {
-    spotlightWindow.setVibrancy(enableVibrancy ? "under-window" : null);
-  }
+  _vibrancyEnabledSpotlight = !!enableVibrancy;
+  applyDarkVibrancy(_vibrancyEnabledMain, _vibrancyEnabledSpotlight);
 });
 
 async function ligma(scriptContent) {
@@ -450,7 +461,8 @@ function createWindow() {
     minHeight: 640,
     width: 1450,
     height: 760,
-    vibrancy: "under-window",
+
+    vibrancy: "hud",
     visualEffectState: "active",
     webPreferences: {
       nodeIntegration: true,
@@ -540,9 +552,25 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  try {
+    if (nativeTheme.themeSource !== "dark") nativeTheme.themeSource = "dark";
+  } catch (_) {}
+
   createWindow();
   initializeSpotlight();
   checkForUpdates();
+
+  try {
+    nativeTheme.on("updated", () => {
+      try {
+        if (nativeTheme.themeSource !== "dark")
+          nativeTheme.themeSource = "dark";
+      } catch (_) {}
+      applyDarkVibrancy(_vibrancyEnabledMain, _vibrancyEnabledSpotlight);
+    });
+  } catch (_) {}
+
+  applyDarkVibrancy(_vibrancyEnabledMain, _vibrancyEnabledSpotlight);
 
   try {
     globalShortcut.register("Option+.", () => {

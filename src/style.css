@@ -9,6 +9,43 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: row;
+  position: relative;
+}
+
+:root {
+  --vibrancy-opacity: 0.56;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 28, 28, var(--vibrancy-opacity));
+  pointer-events: none;
+  z-index: 0;
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+.container,
+.workspace-sidebar,
+.sidebar,
+.top-bar,
+footer,
+.console-container,
+.settings-pane,
+.prompter,
+.toast,
+.context-menu {
+  position: relative;
+  z-index: 1;
+}
+
+#vibrancyOpacityGroup.disabled {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+}
+#vibrancyOpacityGroup.disabled input {
+  cursor: not-allowed;
 }
 * {
   border: none;
@@ -62,16 +99,15 @@ body::-webkit-scrollbar,
 }
 .console-container {
   height: 240px;
-  border-radius: 20px;
-  margin: 8px;
+  margin: 0 8px 8px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  position: static;
+  position: relative;
   left: auto;
   right: auto;
   bottom: auto;
-  background: rgba(28, 28, 28, 0.3);
+  background: transparent;
+  overflow: hidden;
   transition:
     height 0.3s ease,
     margin-bottom 0.3s ease,
@@ -82,11 +118,15 @@ body::-webkit-scrollbar,
   margin-bottom: 0;
   opacity: 0;
 }
+.console-container.collapsed {
+  opacity: 0;
+  pointer-events: none;
+}
 .tab {
   user-select: none;
   background: transparent;
-  border-radius: 16px;
-  border: 1px solid transparent;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   margin: 0 4px 0 0;
   padding: 0 12px;
   height: 38px;
@@ -162,10 +202,10 @@ body::-webkit-scrollbar,
   user-select: none;
   width: 0;
   transition: width 0.3s;
-  background: rgba(28, 28, 28, 0.3);
-  border-radius: 20px;
+  background: transparent;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
   overflow: visible;
   margin: 8px;
   margin-top: 70px;
@@ -182,30 +222,59 @@ body::-webkit-scrollbar,
   border-radius: 8px;
   border: 1.5px solid var(--accent-color);
   outline: none;
-  background: rgba(28, 28, 28, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   color: #e0e0e0;
   font-size: 15px;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
   box-sizing: border-box;
 }
+
+.accent-color-picker {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1.5px solid var(--accent-color);
+  background: transparent;
+  width: 44px;
+  height: 38px;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  margin-right: 8px;
+  box-sizing: border-box;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.4));
+}
+.accent-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.accent-color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
+}
+.accent-color-picker:focus {
+  outline: none;
+  filter: drop-shadow(0 0 8px var(--accent-color));
+}
+
+.sidebar input::placeholder {
+  color: #a0a0a0;
+}
+
 .sidebar input {
   margin: 16px 16px 8px 16px;
   padding: 0 18px;
   height: 38px;
-  border-radius: 16px;
-  border: 1.5px solid var(--accent-color);
   outline: none;
-  background: rgba(28, 28, 28, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
   color: #e0e0e0;
   font-size: 15px;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
   box-sizing: border-box;
+  width: calc(100% - 32px);
+  line-height: 38px;
 }
-.sidebar input:focus,
 .accent-color-input:focus,
-input:focus,
 select:focus {
   border: 1.5px solid var(--accent-color);
   outline: none;
@@ -219,11 +288,9 @@ select:focus {
   flex: 1;
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
   margin: 8px;
-  background: rgba(28, 28, 28, 0.3);
+  background: transparent;
   filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.08);
   min-height: 300px;
 }
 .editor-container:focus,
@@ -290,8 +357,19 @@ select:focus {
   font-size: 15px !important;
   line-height: 1.5 !important;
 }
-.script-item,
-.saved-script,
+.saved-script {
+  background-color: rgba(22, 22, 22, 0.08);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 8px;
+  padding: 15px;
+  transition: all 0.3s;
+  font-size: 14px;
+  color: #e5e9f0;
+  cursor: pointer;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+}
 .searched-script {
   background-color: rgba(22, 22, 22, 0.3);
   position: relative;
@@ -305,14 +383,15 @@ select:focus {
   cursor: pointer;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
 }
-.script-item:hover,
-.saved-script:hover,
 .searched-script:hover {
   background: rgba(35, 35, 35, 0.5);
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
   transform: translateY(-2px);
 }
-.script-item.searched-script,
+.saved-script:hover {
+  background: rgba(35, 35, 35, 0.2);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
+}
 .searched-script {
   background: rgba(15, 15, 15, 0.4);
 }
@@ -394,24 +473,71 @@ select:focus {
 footer {
   height: 80px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  gap: 10px;
   position: static;
   left: auto;
-
-  #toggleConsole.locked {
-    opacity: 0.5;
-    cursor: not-allowed !important;
-    filter: grayscale(40%);
-  }
   right: auto;
   bottom: auto;
   box-sizing: border-box;
-  border-radius: 20px;
-  border-top: none;
   margin: 8px;
-  background: rgba(28, 28, 28, 0.3);
+  padding: 0 12px;
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+footer #toggleConsole.locked {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  filter: grayscale(40%);
+}
+
+.footer-console-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  opacity: 1;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.console-container.collapsed ~ footer .footer-console-buttons {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+}
+.footer-console-buttons .console-btn {
+  background: transparent;
+  color: #e0e0e0;
+  border: none;
+  border-radius: 12px !important;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    all 0.2s ease,
+    filter 0.2s ease;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.35));
+}
+.footer-console-buttons .console-btn i {
+  margin: 0;
+  font-size: 16px;
+}
+.footer-console-buttons .console-btn:hover {
+  background: transparent;
+  filter: drop-shadow(0 0 8px var(--accent-color));
+  color: var(--accent-color);
+}
+.footer-console-buttons .console-btn:active {
+  transform: scale(0.92);
+}
+.footer-console-buttons .console-btn:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 10px var(--accent-color));
 }
 .tab.tab-deleted span {
   color: #ff4c4c !important;
@@ -497,17 +623,11 @@ footer {
   width: 50px;
   height: 50px;
   flex-shrink: 0;
+  margin-left: 24px;
   filter: drop-shadow(0 0 10px var(--accent-color));
 }
 .exec-button i {
   filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.3));
-}
-.rgggg {
-  flex: 1;
-  display: flex;
-  justify-content: right;
-  align-items: right;
-  margin-right: 30px;
 }
 .button i,
 .button.settings-button i {
@@ -529,6 +649,9 @@ footer {
     transform 0.25s ease,
     filter 0.25s ease;
 }
+.roblox-button {
+  margin-left: 4px;
+}
 
 .toast {
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
@@ -547,11 +670,7 @@ footer {
 .rename-content,
 .discord-content,
 .settings-content,
-.sudo-content {
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.5));
-}
-.rename-content input,
-.sudo-content input {
+.rename-content input {
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
 }
 .copilot-button {
@@ -574,8 +693,65 @@ footer {
 .reset-btn {
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
 }
-.close-color-picker-btn {
-  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
+.settings-group input[type="range"]#vibrancyOpacity {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    var(--accent-color),
+    var(--accent-color)
+  );
+  outline: none;
+  cursor: pointer;
+  accent-color: var(--accent-color);
+  transition:
+    filter 0.25s ease,
+    background 0.25s ease;
+}
+.settings-group
+  input[type="range"]#vibrancyOpacity::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--accent-color),
+    var(--accent-color)
+  );
+  border-radius: 4px;
+}
+.settings-group input[type="range"]#vibrancyOpacity::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  border: 2px solid #121212;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.3s ease;
+}
+.settings-group
+  input[type="range"]#vibrancyOpacity:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.settings-group input[type="range"]#vibrancyOpacity:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.6) brightness(0.7);
+  background: rgba(120, 120, 120, 0.25);
+  box-shadow: none;
+}
+.settings-group
+  input[type="range"]#vibrancyOpacity:disabled::-webkit-slider-runnable-track {
+  background: rgba(120, 120, 120, 0.25);
+  box-shadow: none;
+}
+.settings-group
+  input[type="range"]#vibrancyOpacity:disabled::-webkit-slider-thumb {
+  background: #555;
+  box-shadow: none;
 }
 .saved-tab {
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
@@ -664,19 +840,37 @@ footer {
   color: #e0e0e0;
   font-size: 15px;
 }
-.console-header {
-  user-select: none;
-  padding: 10px 16px;
-  font-size: 13px;
-  color: #e0e0e0;
+.console-button-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 2px;
+  background: transparent;
+  padding: 0;
+  margin: -12px 0 0 0;
+  pointer-events: auto;
+  position: relative;
+  overflow: visible;
 }
-.console-header i {
-  user-select: none;
-  margin-right: 8px;
-  color: #e0e0e0;
+.console-button-row::before {
+  display: none;
+}
+
+.console-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  z-index: 1;
+}
+.console-container {
+  padding-top: 8px;
+}
+.console-output {
+  padding-right: 12px;
+  position: relative;
 }
 .console-output {
   flex: 1;
@@ -691,13 +885,14 @@ footer {
   word-wrap: break-word;
   word-break: break-all;
 }
-.console-clear {
-  cursor: pointer;
-  color: #e0e0e0;
-  font-size: 15px;
+
+.console-container .console-output {
+  min-height: 0;
 }
-.console-clear:hover {
-  color: #fff;
+footer .button,
+footer .exec-button,
+footer .console-btn {
+  line-height: 1;
 }
 .log-error {
   color: #ff6f6f;
@@ -799,8 +994,7 @@ footer {
 }
 .rename-content,
 .discord-content,
-.settings-content,
-.sudo-content {
+.settings-content {
   user-select: none;
   background: rgba(28, 28, 28, 0.3);
   padding: 32px 32px 24px 32px;
@@ -823,25 +1017,18 @@ footer {
 }
 .rename-dialog.open .rename-content,
 .discord-dialog.open .discord-content,
-.settings-pane.open .settings-content.open .sudo-content {
+.settings-pane.open .settings-content.open {
   transform: scale(1);
   opacity: 1;
 }
 .rename-dialog.closing .rename-content,
 .discord-dialog.closing .discord-content,
-.settings-pane.closing .settings-content.closing .sudo-content {
+.settings-pane.closing .settings-content.closing {
   transform: scale(0.96);
   opacity: 0;
 }
 .rename-content h2,
-.sudo-content h2 {
-  color: #e0e0e0;
-  margin-top: 0;
-  margin-bottom: 24px;
-  text-align: center;
-}
-.rename-content input,
-.sudo-content input {
+.rename-content input {
   width: 100%;
   padding: 10px;
   margin: 15px 0;
@@ -852,8 +1039,7 @@ footer {
   box-sizing: border-box;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
 }
-.rename-content input:focus,
-.sudo-content input:focus {
+.rename-content input:focus {
   border-color: var(--accent-color);
   outline: none;
   filter: drop-shadow(0 0 8px var(--accent-color));
@@ -1028,9 +1214,9 @@ footer {
   left: 0;
   right: 0;
   margin: 8px;
-  background: rgba(28, 28, 28, 0.3);
-  border-radius: 20px;
+  background: transparent;
   height: 55px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   padding: 0 12px;
@@ -1444,27 +1630,6 @@ footer {
 :root {
   --accent-color: #7fb4ff;
 }
-.close-color-picker-btn {
-  background: rgba(28, 28, 28, 0.3);
-  color: #d8dee9;
-
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 18px;
-  margin-left: 8px;
-  height: 38px;
-  width: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
-}
-.close-color-picker-btn:hover {
-  background: rgba(0, 0, 0, 0.5);
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.7));
-}
 .saved-tab span {
   color: #b0b0b0 !important;
   font-style: italic;
@@ -1474,9 +1639,7 @@ footer {
   border-bottom: 2px solid #b0b0b0;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
 }
-.button.sidebar-toggle-btn,
-.button.sidebar-togglen,
-.button.sidebar-toggle {
+.button.sidebar-toggle-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1530,8 +1693,8 @@ footer {
   user-select: none;
   width: 0;
   transition: width 0.3s;
-  background: rgba(28, 28, 28, 0.3);
-  border-radius: 20px;
+  background: transparent;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1566,19 +1729,20 @@ footer {
 .workspace-item {
   display: flex;
   align-items: center;
-  background: rgba(28, 28, 28, 0.4);
+  background: rgba(28, 28, 28, 0.01);
   padding: 8px 12px;
-  border-radius: 8px;
   margin-bottom: 5px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition:
+    background 0.3s,
+    transform 0.1s;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
 }
 .workspace-item:hover {
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+  background: rgba(28, 28, 28, 0.05);
 }
 .workspace-item.active {
-  background: rgba(28, 28, 28, 0.6);
+  background: rgba(28, 28, 28, 0.2);
 }
 .workspace-item i {
   margin-right: 8px;

@@ -7,6 +7,7 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
     <title>Tritium</title>
+    <meta name="color-scheme" content="dark" />
     <meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap"
@@ -128,25 +129,6 @@
       </div>
 
       <div class="console-container">
-        <div class="console-header">
-          <span>Console</span>
-          <div class="console-button-row" style="display: flex; gap: 8px">
-            <button
-              class="medium-button console-btn"
-              id="copyConsole"
-              title="Copy Console"
-            >
-              <i class="fas fa-copy"></i>
-            </button>
-            <button
-              class="medium-button console-btn"
-              id="clearConsole"
-              title="Clear Console"
-            >
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
         <div class="console-output" id="consoleOutput"></div>
       </div>
       <footer>
@@ -188,28 +170,34 @@
         >
           <i class="fab fa-discord"></i>
         </button>
-        <div class="rgggg">
-          <button
-            id="roblox-button"
-            class="button roblox-button"
-            title="Launch Roblox"
-          >
-            <svg
-              class="roblox-svg-icon"
-              viewBox="0 0 267 267"
-              width="24"
-              height="24"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <title>Roblox</title>
-              <path
-                d="M65.4 15.6L15.6 201.7l186.2 49.9 49.7-186.2L65.4 15.6zm49.2 85.5l51.9 13.9-13.9 52-52-14 14-51.9z"
-                fill="currentColor"
-              />
-            </svg>
+        <div class="footer-console-buttons" id="footerConsoleButtons">
+          <button class="console-btn" id="copyConsole" title="Copy Console">
+            <i class="fas fa-copy"></i>
+          </button>
+          <button class="console-btn" id="clearConsole" title="Clear Console">
+            <i class="fas fa-trash"></i>
           </button>
         </div>
+        <button
+          id="roblox-button"
+          class="button roblox-button"
+          title="Launch Roblox"
+        >
+          <svg
+            class="roblox-svg-icon"
+            viewBox="0 0 267 267"
+            width="24"
+            height="24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <title>Roblox</title>
+            <path
+              d="M65.4 15.6L15.6 201.7l186.2 49.9 49.7-186.2L65.4 15.6zm49.2 85.5l51.9 13.9-13.9 52-52-14 14-51.9z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
         <button
           id="exec-button"
           class="exec-button"
@@ -248,6 +236,13 @@
           <label for="accentColorInput">Accent</label>
           <div class="setting-control">
             <input
+              id="accentColorPicker"
+              type="color"
+              class="accent-color-picker"
+              title="Pick Accent Color"
+              aria-label="Pick Accent Color"
+            />
+            <input
               id="accentColorInput"
               type="text"
               maxlength="6"
@@ -270,6 +265,28 @@
               <option value="on" selected>On</option>
               <option value="off">Off</option>
             </select>
+          </div>
+        </div>
+        <div class="settings-group" id="vibrancyOpacityGroup">
+          <label for="vibrancyOpacity">Window Opacity</label>
+          <div class="setting-control">
+            <input
+              id="vibrancyOpacity"
+              type="range"
+              min="0"
+              max="100"
+              value="70"
+            />
+            <span
+              id="vibrancyOpacityValue"
+              style="
+                min-width: 34px;
+                text-align: right;
+                font-size: 12px;
+                margin-left: 6px;
+              "
+              >70%</span
+            >
           </div>
         </div>
         <div class="settings-group">

@@ -49,6 +49,9 @@ const workspaceToggleBtn = document.getElementById("workspace-toggle-btn");
 const newWorkspaceBtn = document.getElementById("new-workspace-btn");
 const clearWorkspaceBtn = document.getElementById("clear-workspace-btn");
 const vibrancyToggle = document.getElementById("vibrancyToggle");
+const vibrancyOpacityInput = document.getElementById("vibrancyOpacity");
+const vibrancyOpacityValue = document.getElementById("vibrancyOpacityValue");
+const vibrancyOpacityGroup = document.getElementById("vibrancyOpacityGroup");
 const scriptHubSelect = document.getElementById("scriptHub");
 const discordBtn = document.getElementById("discord-button");
 const discordDialog = document.getElementById("discordDialog");
@@ -273,6 +276,7 @@ function expandConsole() {
 }
 
 function evaluateConsoleLock() {
+  const wasLocked = consoleLockActive;
   let onlineCount = 0;
   for (let p = PORT_START; p <= PORT_END; p++) {
     if (portStatusCache[p] === "online") onlineCount++;
@@ -287,6 +291,9 @@ function evaluateConsoleLock() {
   } else if (onlineCount > 1) {
     newLockActive = true;
     newReason = "multi";
+  } else if (consoleOutput && consoleOutput.children.length === 0) {
+    newLockActive = true;
+    newReason = "empty";
   }
 
   if (newLockActive) {
@@ -298,8 +305,10 @@ function evaluateConsoleLock() {
         toggleConsole.classList.add("locked");
         toggleConsole.title =
           newReason === "multi"
-            ? "Multiple backend instances detected (console locked)"
-            : "No backend instance detected (console locked)";
+            ? "Multiple Roblox instances detected (console locked)"
+            : newReason === "zero"
+              ? "No Roblox instance detected (console locked)"
+              : "Console empty (locked until output appears)";
       }
     }
   } else {
@@ -312,7 +321,9 @@ function evaluateConsoleLock() {
       }
     }
 
-    if (lastOnlinePortCount === 0 && onlineCount === 1) {
+    if (wasLocked && !newLockActive) {
+      expandConsole();
+    } else if (lastOnlinePortCount === 0 && onlineCount === 1) {
       expandConsole();
     }
   }
@@ -537,10 +548,20 @@ function checkFirstTimeUser() {
 
 toggleConsole.addEventListener("click", function () {
   if (consoleLockActive) {
-    const msg =
-      consoleLockReason === "multi"
-        ? "Multiple ports online; console locked until only one is active"
-        : "No ports online; console locked until Roblox is detected";
+    let msg;
+    switch (consoleLockReason) {
+      case "multi":
+        msg = "Multiple ports online; console locked until only one is active";
+        break;
+      case "zero":
+        msg = "No ports online; console locked until Roblox is detected";
+        break;
+      case "empty":
+        msg = "Console empty; will unlock automatically when output appears";
+        break;
+      default:
+        msg = "Console locked";
+    }
     showToast(msg, true);
     return;
   }
@@ -568,11 +589,17 @@ toggleSidebar.addEventListener("click", () => {
     toggleSidebar.style.transform = "rotate(360deg)";
     sidebar.classList.remove("open");
     sidebarOpen = false;
+    try {
+      localStorage.setItem("sidebarOpen", "false");
+    } catch (_) {}
   } else {
     toggleSidebar.style.transition = "transform 0.3s ease";
     toggleSidebar.style.transform = "rotate(-360deg)";
     sidebar.classList.add("open");
     sidebarOpen = true;
+    try {
+      localStorage.setItem("sidebarOpen", "true");
+    } catch (_) {}
   }
 });
 
@@ -589,9 +616,15 @@ function addLog(message, type = "info") {
     logElement.classList.add("show");
   }, 10);
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+  if (consoleLockReason === "empty") {
+    evaluateConsoleLock();
+  }
 }
 clearConsoleBtn.addEventListener("click", () => {
   consoleOutput.innerHTML = "";
+
+  evaluateConsoleLock();
 });
 
 function startLogWatcher() {
@@ -1336,35 +1369,39 @@ function createEditor(tabId, content) {
             () => {},
           );
 
-          window.addEventListener(
-            "keydown",
-            (e) => {
-              const isPaste =
-                (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v";
-              if (!isPaste) return;
+          if (!window._tritiumPasteHandlerAdded) {
+            window.addEventListener(
+              "keydown",
+              (e) => {
+                if (e.defaultPrevented) return;
+                const isPaste =
+                  (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v";
+                if (!isPaste) return;
 
-              const active = document.activeElement;
-              const isMonacoFocused =
-                active &&
-                active.classList &&
-                active.classList.contains("inputarea");
-              if (!isMonacoFocused) return;
-              try {
-                if (typeof require === "function") {
-                  const { clipboard } = require("electron");
-                  const text = clipboard.readText();
-                  if (text && editorAPI._editor) {
-                    e.preventDefault();
-                    const sel = editorAPI._editor.getSelection();
-                    editorAPI._editor.executeEdits("paste", [
-                      { range: sel, text, forceMoveMarkers: true },
-                    ]);
+                const active = document.activeElement;
+                const isMonacoFocused =
+                  active &&
+                  active.classList &&
+                  active.classList.contains("inputarea");
+                if (!isMonacoFocused) return;
+                try {
+                  if (typeof require === "function") {
+                    const { clipboard } = require("electron");
+                    const text = clipboard.readText();
+                    if (text && editorAPI._editor) {
+                      e.preventDefault();
+                      const sel = editorAPI._editor.getSelection();
+                      editorAPI._editor.executeEdits("paste", [
+                        { range: sel, text, forceMoveMarkers: true },
+                      ]);
+                    }
                   }
-                }
-              } catch (_) {}
-            },
-            true,
-          );
+                } catch (_) {}
+              },
+              true,
+            );
+            window._tritiumPasteHandlerAdded = true;
+          }
 
           monacoEditor.onDidChangeModelContent(() => {});
         } catch (err) {
@@ -1941,10 +1978,21 @@ document.addEventListener("keydown", (e) => {
   ) {
     e.preventDefault();
     if (consoleLockActive) {
-      const msg =
-        consoleLockReason === "multi"
-          ? "Multiple ports online; console locked until only one is active"
-          : "No ports online; console locked until Roblox is detected";
+      let msg;
+      switch (consoleLockReason) {
+        case "multi":
+          msg =
+            "Multiple ports online; console locked until only one is active";
+          break;
+        case "zero":
+          msg = "No ports online; console locked until Roblox is detected";
+          break;
+        case "empty":
+          msg = "Console empty; will unlock automatically when output appears";
+          break;
+        default:
+          msg = "Console locked";
+      }
       showToast(msg, true);
       return;
     }
@@ -2191,13 +2239,13 @@ async function loadupdated() {
       if (j < rscriptsScripts.length) merged.push(rscriptsScripts[j++]);
     }
     updatedScripts = merged;
-    showToast("Done!");
     if (sidebar.classList.contains("open")) renderSidebar();
   } catch (err) {
     console.error("Error loading scripts:", err);
     const noupdated = document.createElement("div");
     noupdated.className = "script-item";
-    noupdated.textContent = "Error loading updated scripts";
+    noupdated.textContent =
+      "There was an error. Most likely a ScriptBlox ratelimit.";
     scriptsList.appendChild(noupdated);
   }
 }
@@ -2351,7 +2399,22 @@ window.onload = function () {
   startLogWatcher();
   startFileWatcher();
   initPortSelector();
-  workspaceSidebar.classList.add("open");
+
+  try {
+    const storedWorkspace = localStorage.getItem("workspaceSidebarOpen");
+    if (storedWorkspace === null) {
+      workspaceSidebar.classList.add("open");
+      workspaceSidebarOpen = true;
+    } else if (storedWorkspace === "true") {
+      workspaceSidebar.classList.add("open");
+      workspaceSidebarOpen = true;
+      workspaceToggleBtn.classList.add("active");
+    } else {
+      workspaceSidebar.classList.remove("open");
+      workspaceSidebarOpen = false;
+      workspaceToggleBtn.classList.remove("active");
+    }
+  } catch (_) {}
   loadAutoExecuteScripts();
   updatedLoaded = false;
   loadWorkspaces();
@@ -2370,6 +2433,14 @@ window.onload = function () {
   const newTabBtn = document.getElementById("new-tab-btn");
   if (newTabBtn) {
     newTabBtn.addEventListener("click", () => createTab());
+  }
+
+  if (sidebarOpen || sidebar.classList.contains("open")) {
+    try {
+      renderSidebar();
+    } catch (e) {
+      console.warn("renderSidebar failed on load", e);
+    }
   }
 };
 
@@ -2433,17 +2504,21 @@ function getSettings() {
   return {
     glowMode: localStorage.getItem("glowMode") || "default",
     accentColor: localStorage.getItem("accentColor") || "#7FB4FF",
-
     vibrancyEnabled:
       localStorage.getItem("vibrancyEnabled") !== null
         ? localStorage.getItem("vibrancyEnabled") === "true"
         : true,
+    vibrancyOpacity: parseInt(
+      localStorage.getItem("vibrancyOpacity") || "50",
+      10,
+    ),
     scriptHub: localStorage.getItem("scriptHub") || "both",
   };
 }
 
 function applySettings() {
-  const { glowMode, accentColor, vibrancyEnabled, scriptHub } = getSettings();
+  const { glowMode, accentColor, vibrancyEnabled, vibrancyOpacity, scriptHub } =
+    getSettings();
   document.body.classList.remove("glow-default", "glow-old", "glow-high");
   document.body.classList.add("glow-" + glowMode);
   document.documentElement.style.setProperty("--accent-color", accentColor);
@@ -2452,6 +2527,23 @@ function applySettings() {
     ipcRenderer.send("set-vibrancy", vibrancyEnabled);
   }
   vibrancyToggle.value = vibrancyEnabled ? "on" : "off";
+  if (vibrancyOpacityInput) {
+    vibrancyOpacityInput.value = vibrancyOpacity;
+    if (vibrancyOpacityValue) {
+      vibrancyOpacityValue.textContent = vibrancyEnabled
+        ? vibrancyOpacity + "%"
+        : "0%";
+    }
+    vibrancyOpacityInput.disabled = !vibrancyEnabled;
+    if (vibrancyOpacityGroup)
+      vibrancyOpacityGroup.classList.toggle("disabled", !vibrancyEnabled);
+  }
+
+  const effectiveOpacity = vibrancyEnabled ? (vibrancyOpacity / 100) * 0.8 : 0;
+  document.documentElement.style.setProperty(
+    "--vibrancy-opacity",
+    effectiveOpacity.toString(),
+  );
   if (scriptHubSelect) {
     scriptHubSelect.value = scriptHub;
   }
@@ -2461,6 +2553,9 @@ function saveSettings() {
   localStorage.setItem("glowMode", glowModeSelect.value);
   localStorage.setItem("accentColor", `#${accentColorInput.value}`);
   localStorage.setItem("vibrancyEnabled", vibrancyToggle.value === "on");
+  if (vibrancyOpacityInput) {
+    localStorage.setItem("vibrancyOpacity", vibrancyOpacityInput.value);
+  }
   if (scriptHubSelect) {
     localStorage.setItem("scriptHub", scriptHubSelect.value);
   }
@@ -2473,9 +2568,54 @@ vibrancyToggle.addEventListener("change", () => {
   if (isElectron && ipcRenderer) {
     ipcRenderer.send("set-vibrancy", isEnabled);
   }
+  if (vibrancyOpacityInput) {
+    vibrancyOpacityInput.disabled = !isEnabled;
+    if (vibrancyOpacityGroup)
+      vibrancyOpacityGroup.classList.toggle("disabled", !isEnabled);
+    if (vibrancyOpacityValue) {
+      vibrancyOpacityValue.textContent = isEnabled
+        ? vibrancyOpacityInput.value + "%"
+        : "0%";
+    }
+
+    const val = parseInt(vibrancyOpacityInput.value, 10) || 0;
+    const effective = isEnabled ? (val / 100) * 0.8 : 0;
+    document.documentElement.style.setProperty(
+      "--vibrancy-opacity",
+      effective.toString(),
+    );
+  }
   saveSettings();
   applySettings();
 });
+
+if (vibrancyOpacityInput) {
+  const handleOpacity = () => {
+    const val = parseInt(vibrancyOpacityInput.value, 10);
+    if (vibrancyOpacityValue) {
+      if (vibrancyToggle.value !== "on") {
+        vibrancyOpacityValue.textContent = "0%";
+      } else {
+        vibrancyOpacityValue.textContent = val + "%";
+      }
+    }
+
+    if (vibrancyToggle.value === "on") {
+      document.documentElement.style.setProperty(
+        "--vibrancy-opacity",
+        ((val / 100) * 0.8).toString(),
+      );
+    }
+  };
+  vibrancyOpacityInput.addEventListener("input", () => {
+    handleOpacity();
+
+    localStorage.setItem("vibrancyOpacity", vibrancyOpacityInput.value);
+  });
+  vibrancyOpacityInput.addEventListener("change", () => {
+    saveSettings();
+  });
+}
 
 glowModeSelect.addEventListener("change", saveSettings);
 
@@ -2823,6 +2963,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 const accentColorInput = document.getElementById("accentColorInput");
+const accentColorPicker = document.getElementById("accentColorPicker");
 
 function isValidHex(hex) {
   return /^#?([0-9A-Fa-f]{6})$/.test(hex);
@@ -2853,6 +2994,29 @@ if (accentColorInput) {
       "",
     );
     accentColorInput.value = current;
+    if (accentColorPicker) {
+      accentColorPicker.value = "#" + current;
+    }
+  });
+}
+
+if (accentColorPicker) {
+  const stored = localStorage.getItem("accentColor") || "#7FB4FF";
+  accentColorPicker.value = stored;
+  accentColorPicker.addEventListener("input", () => {
+    const val = accentColorPicker.value;
+    if (isValidHex(val)) {
+      const hexNoHash = val.replace(/^#/, "");
+      if (accentColorInput) accentColorInput.value = hexNoHash.toUpperCase();
+      localStorage.setItem("accentColor", val.toUpperCase());
+      applySettings();
+    }
+  });
+}
+
+if (resetColorBtn && accentColorPicker) {
+  resetColorBtn.addEventListener("click", () => {
+    accentColorPicker.value = "#7FB4FF";
   });
 }
 
@@ -3068,9 +3232,15 @@ workspaceToggleBtn.addEventListener("click", () => {
   if (workspaceSidebarOpen) {
     workspaceSidebar.classList.add("open");
     workspaceToggleBtn.classList.add("active");
+    try {
+      localStorage.setItem("workspaceSidebarOpen", "true");
+    } catch (_) {}
   } else {
     workspaceSidebar.classList.remove("open");
     workspaceToggleBtn.classList.remove("active");
+    try {
+      localStorage.setItem("workspaceSidebarOpen", "false");
+    } catch (_) {}
   }
 });
 
@@ -3134,6 +3304,36 @@ window.addEventListener("DOMContentLoaded", () => {
   restructureDOM();
   addWorkspaceSidebar();
   checkFirstTimeUser();
+
+  try {
+    const sOpen = localStorage.getItem("sidebarOpen");
+    if (sOpen === "true") {
+      if (!sidebar.classList.contains("open")) {
+        sidebar.classList.add("open");
+        sidebarOpen = true;
+        toggleSidebar.innerHTML;
+      }
+    } else if (sOpen === "false") {
+      if (sidebar.classList.contains("open")) {
+        sidebar.classList.remove("open");
+        sidebarOpen = false;
+      }
+    }
+    const wOpen = localStorage.getItem("workspaceSidebarOpen");
+    if (wOpen === "true") {
+      if (!workspaceSidebar.classList.contains("open")) {
+        workspaceSidebar.classList.add("open");
+        workspaceSidebarOpen = true;
+        workspaceToggleBtn.classList.add("active");
+      }
+    } else if (wOpen === "false") {
+      if (workspaceSidebar.classList.contains("open")) {
+        workspaceSidebar.classList.remove("open");
+        workspaceSidebarOpen = false;
+        workspaceToggleBtn.classList.remove("active");
+      }
+    }
+  } catch (_) {}
 });
 
 let workspaceAutosaveTimer = null;
