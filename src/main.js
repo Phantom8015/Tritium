@@ -642,7 +642,9 @@ function startLogWatcher() {
         } else if (logLine.includes("DEBUG") || logLine.includes("Debug")) {
           logType = "debug";
         }
-        addLog(logLine, logType);
+
+        const logline = logLine.split("] ").pop();
+        addLog(logline, logType);
       });
     }
   });
@@ -1237,14 +1239,22 @@ function createEditor(tabId, content) {
               return { suggestions };
             },
           };
-          monaco.languages.registerCompletionItemProvider(
-            "lua",
-            provideLuauCompletions,
-          );
-          monaco.languages.registerCompletionItemProvider(
-            "luau",
-            provideLuauCompletions,
-          );
+
+          if (!window.__tritiumMonacoProvidersRegistered) {
+            try {
+              monaco.languages.registerCompletionItemProvider(
+                "lua",
+                provideLuauCompletions,
+              );
+              monaco.languages.registerCompletionItemProvider(
+                "luau",
+                provideLuauCompletions,
+              );
+            } catch (e) {
+              console.warn("Failed to register completion provider:", e);
+            }
+            window.__tritiumMonacoProvidersRegistered = true;
+          }
 
           monaco.editor.defineTheme("tritium-dark", {
             base: "vs-dark",
@@ -1721,7 +1731,7 @@ autoExecuteScriptBtn.addEventListener("click", () => {
 
 function createTab(name = "Untitled", content = "-- New script") {
   if (tabs.children.length >= 20) {
-    showToast("Maximum tabs reached", true);
+    showToast("Maximum tabs reached for current workspace", true);
     return;
   }
   const id = "tab" + Date.now();

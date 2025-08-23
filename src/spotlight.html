@@ -7,22 +7,975 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="spotlight.css" />
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        border-radius: 10px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        animation: spotlightAppear 0.2s ease-out forwards;
+      }
+
+      :root {
+        --vibrancy-opacity: 0.56;
+      }
+
+      body {
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(28, 28, 28, var(--vibrancy-opacity));
+        pointer-events: none;
+        z-index: 0;
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+      }
+
+      .spotlight-container {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 8px 8px 0 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        animation: spotlightAppear 0.2s ease-out forwards;
+      }
+
+      #script-search-bar {
+        flex-grow: 1;
+        padding: 10px 15px;
+        font-size: 18px;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        border: none;
+        user-select: none;
+        background-color: transparent;
+        color: #e0e0e0;
+        outline: none;
+        margin-right: 8px;
+        position: relative;
+        z-index: 11;
+      }
+
+      #script-search-bar::placeholder {
+        color: #a0a0a0;
+      }
+
+      #spotlight-mode-select {
+        background-color: rgba(255, 255, 255, 0.02);
+        color: #e0e0e0;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 8px 10px;
+        font-size: 13px;
+        border-radius: 6px;
+        outline: none;
+        cursor: pointer;
+      }
+
+      #spotlight-mode-select option {
+        background: #1e1e1e;
+        color: #e0e0e0;
+      }
+
+      #suggestions-container {
+        overflow-y: auto;
+        backdrop-filter: blur(15px) saturate(150%);
+        -webkit-backdrop-filter: blur(15px) saturate(150%);
+        border-radius: 0 0 8px 8px;
+        padding: 5px 0;
+        margin-bottom: 5px;
+        flex: 1;
+        max-height: calc(100vh - 60px);
+      }
+
+      .suggestion-item {
+        padding: 10px 15px;
+        color: #d0d0d0;
+        cursor: pointer;
+        font-size: 16px;
+        user-select: none;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: transparent;
+        transition: all 0.2s ease-out;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: fadeInUp 0.3s ease-out forwards;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spotlightAppear {
+        from {
+          opacity: 0;
+          transform: scale(0.98) translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes spotlightDisappear {
+        from {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: scale(0.98) translateY(-10px);
+        }
+      }
+
+      body.closing,
+      .spotlight-container.closing {
+        animation: spotlightDisappear 0.2s ease-out forwards;
+      }
+
+      .suggestion-item:hover {
+        transform: scale(1.02);
+        transition: all 0.2s ease-out;
+        translate: 0 2px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .suggestion-item:active {
+        transform: scale(0.98);
+        transition: all 0.1s ease-out;
+      }
+
+      .suggestion-item.selected {
+        border-color: var(--accent-color);
+        color: white;
+        transform: scale(1.02);
+        transition: all 0.2s ease-out;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+      ::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: transparent;
+      }
+
+      .spotlight-loading {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        pointer-events: none;
+      }
+      .spotlight-spinner {
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        pointer-events: none;
+      }
+      .spotlight-spinner div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 38px;
+        height: 38px;
+        margin: 5px;
+        border: 4px solid var(--accent-color, #7fb4ff);
+        border-radius: 50%;
+        animation: spotlight-spin 1.2s linear infinite;
+        border-color: var(--accent-color, #7fb4ff) transparent transparent
+          transparent;
+        opacity: 0.95;
+      }
+      .spotlight-spinner div:nth-child(1) {
+        animation-delay: -0.45s;
+      }
+      .spotlight-spinner div:nth-child(2) {
+        animation-delay: -0.3s;
+      }
+      .spotlight-spinner div:nth-child(3) {
+        animation-delay: -0.15s;
+      }
+      @keyframes spotlight-spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="spotlight-loading" class="spotlight-loading" aria-hidden="true">
+      <div class="spotlight-spinner" role="status" aria-label="Loading">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
     <div class="spotlight-container">
       <input
         type="text"
         id="script-search-bar"
         placeholder="Search scripts..."
       />
-      <button id="execute-button"><i class="fas fa-play"></i></button>
+      <select id="spotlight-mode-select" title="Spotlight mode">
+        <option value="script-hub">Script Hub</option>
+        <option value="quick-execute">Quick Execute</option>
+      </select>
     </div>
     <div id="suggestions-container"></div>
-    <script src="spotlight_renderer.js"></script>
+    <script>
+      const { ipcRenderer } = require("electron");
+      const fs = require("fs");
+      const os = require("os");
+      const path = require("path");
+
+      const scriptSearchInput = document.getElementById("script-search-bar");
+      const scriptSuggestionsContainer = document.getElementById(
+        "suggestions-container",
+      );
+      const spotlightModeSelect = document.getElementById(
+        "spotlight-mode-select",
+      );
+
+      function updateModeUI(mode) {
+        try {
+          if (mode === "quick-execute") {
+            scriptSuggestionsContainer.style.display = "none";
+            scriptSearchInput.placeholder = "Paste in your script";
+            try {
+              ipcRenderer.send("set-spotlight-size", {
+                width: 600,
+                height: 61,
+              });
+            } catch (_) {}
+          } else {
+            scriptSuggestionsContainer.style.display = "block";
+            scriptSearchInput.placeholder = "Search scripts...";
+            try {
+              ipcRenderer.send("set-spotlight-size", {
+                width: 600,
+                height: 300,
+              });
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
+
+      try {
+        const savedMode = localStorage.getItem("spotlightMode") || "script-hub";
+        if (spotlightModeSelect) spotlightModeSelect.value = savedMode;
+        updateModeUI(savedMode);
+      } catch (_) {}
+
+      if (spotlightModeSelect) {
+        spotlightModeSelect.addEventListener("change", () => {
+          try {
+            const m = spotlightModeSelect.value;
+            localStorage.setItem("spotlightMode", m);
+            updateModeUI(m);
+            if (m === "script-hub") {
+              loadAvailableScriptNames();
+            } else {
+              scriptSuggestionsContainer.innerHTML = "";
+            }
+          } catch (_) {}
+        });
+      }
+
+      const scriptsBaseDirectory = path.join(
+        os.homedir(),
+        "Documents",
+        "Tritium",
+      );
+
+      function showLoading() {
+        try {
+          const el = document.getElementById("spotlight-loading");
+          if (el) {
+            el.style.display = "flex";
+            el.setAttribute("aria-hidden", "false");
+          }
+        } catch (_) {}
+      }
+
+      function hideLoading() {
+        try {
+          const el = document.getElementById("spotlight-loading");
+          if (el) {
+            el.style.display = "none";
+            el.setAttribute("aria-hidden", "true");
+          }
+        } catch (_) {}
+      }
+
+      function applyAccentColor() {
+        try {
+          const accentColor = localStorage.getItem("accentColor") || "#7FB4FF";
+          document.documentElement.style.setProperty(
+            "--accent-color",
+            accentColor,
+          );
+          const vibrancyEnabled =
+            localStorage.getItem("vibrancyEnabled") === "true";
+          ipcRenderer.send("set-spvibrancy", vibrancyEnabled);
+
+          const rawOpacity = parseInt(
+            localStorage.getItem("vibrancyOpacity") || "50",
+            10,
+          );
+          const effective = vibrancyEnabled ? (rawOpacity / 100) * 0.8 : 0;
+          document.documentElement.style.setProperty(
+            "--vibrancy-opacity",
+            effective.toString(),
+          );
+        } catch (error) {
+          console.error("Error applying accent color:", error);
+        }
+      }
+
+      let allAvailableScriptNames = [];
+      let currentlyDisplayedScriptNames = [];
+      let selectedSuggestionIndex = -1;
+
+      class ScriptItem {
+        constructor(title, content, options = {}) {
+          this.title = title;
+          this.content = content;
+          this.game = options.game || "Saved";
+          this.type = options.type || "local";
+          this.source = options.source || "Local";
+          this._id = options._id || null;
+          this.rawScript = options.rawScript || null;
+        }
+
+        getDisplayText() {
+          return this.title;
+        }
+
+        getDetailsText() {
+          return `${this.game} • ${this.source}`;
+        }
+      }
+
+      async function loadAvailableScriptNames() {
+        try {
+          showLoading();
+          const filenames = await ipcRenderer.invoke("list-scripts");
+          const mappedNames = filenames.map((fileName) =>
+            fileName.replace(/\.txt$/, ""),
+          );
+          const localScripts = [...new Set(mappedNames)].map(
+            (name) =>
+              new ScriptItem(name, null, { type: "local", source: "Local" }),
+          );
+
+          const scriptHub = localStorage.getItem("scriptHub") || "both";
+
+          let remoteScripts = [];
+
+          if (scriptHub === "both") {
+            const [scriptbloxScripts, rscriptsScripts] = await Promise.all([
+              fetchScriptbloxScripts(),
+              fetchRscriptsScripts(),
+            ]);
+
+            const maxLength = Math.max(
+              scriptbloxScripts.length,
+              rscriptsScripts.length,
+            );
+            const alternatingResults = [];
+            for (let i = 0; i < maxLength; i++) {
+              if (i < scriptbloxScripts.length)
+                alternatingResults.push(scriptbloxScripts[i]);
+              if (i < rscriptsScripts.length)
+                alternatingResults.push(rscriptsScripts[i]);
+            }
+            remoteScripts = alternatingResults;
+          } else if (scriptHub === "scriptblox") {
+            remoteScripts = await fetchScriptbloxScripts();
+          } else if (scriptHub === "rscripts") {
+            remoteScripts = await fetchRscriptsScripts();
+          }
+
+          allAvailableScriptNames = [...localScripts, ...remoteScripts];
+
+          try {
+            const seen = new Map();
+            allAvailableScriptNames.forEach((item) => {
+              const key = (item.title || "").toLowerCase().trim();
+              if (!seen.has(key)) seen.set(key, item);
+            });
+            allAvailableScriptNames = Array.from(seen.values());
+          } catch (_) {}
+
+          displayInitialScriptSuggestions();
+          hideLoading();
+        } catch (error) {
+          console.error("Error loading script names:", error);
+          allAvailableScriptNames = [];
+          hideLoading();
+        }
+      }
+
+      async function fetchScriptbloxScripts() {
+        try {
+          const res = await fetch("https://scriptblox.com/api/script/fetch");
+          const data = await res.json();
+
+          if (data && data.result && data.result.scripts) {
+            return data.result.scripts.map((script) => {
+              const gameName =
+                (script.game && (script.game.name || script.game.title)) ||
+                "Unknown Game";
+              return new ScriptItem(script.title || "Unnamed Script", null, {
+                type: "scriptblox",
+                source: "Scriptblox",
+                game: gameName,
+                _id: script._id,
+                rawScript: script.rawScript,
+              });
+            });
+          }
+          return [];
+        } catch (error) {
+          console.error("Error fetching Scriptblox scripts:", error);
+          return [];
+        }
+      }
+
+      async function fetchRscriptsScripts() {
+        try {
+          const res = await fetch(
+            "https://rscripts.net/api/v2/scripts?page=1&orderBy=date",
+          );
+          if (!res.ok) {
+            console.error(
+              "Failed to fetch Rscripts:",
+              res.status,
+              res.statusText,
+            );
+            return [];
+          }
+          const data = await res.json();
+          if (data && data.scripts) {
+            return data.scripts.map((script) => {
+              const gameName =
+                (script.game && (script.game.name || script.game.title)) ||
+                "Unknown Game";
+              return new ScriptItem(script.title || "Unnamed Script", null, {
+                type: "rscripts",
+                source: "Rscripts",
+                game: gameName,
+                _id: script._id,
+                rawScript: script.script,
+              });
+            });
+          }
+          return [];
+        } catch (error) {
+          console.error("Error fetching Rscripts scripts:", error);
+          return [];
+        }
+      }
+
+      function displayInitialScriptSuggestions() {
+        scriptSuggestionsContainer.innerHTML = "";
+        selectedSuggestionIndex = -1;
+        currentlyDisplayedScriptNames = [];
+
+        if (
+          allAvailableScriptNames.length === 0 &&
+          scriptSearchInput.value === ""
+        ) {
+          return;
+        }
+
+        const scriptsToShow = allAvailableScriptNames.slice(0, 20);
+
+        scriptsToShow.forEach((scriptItem) => {
+          currentlyDisplayedScriptNames.push(scriptItem);
+
+          const suggestionElement = document.createElement("div");
+          suggestionElement.classList.add("suggestion-item");
+
+          const titleElement = document.createElement("span");
+          titleElement.textContent = scriptItem.getDisplayText();
+          suggestionElement.appendChild(titleElement);
+
+          const detailsElement = document.createElement("small");
+          detailsElement.textContent = scriptItem.getDetailsText();
+          detailsElement.style.display = "block";
+          detailsElement.style.opacity = "0.7";
+          suggestionElement.appendChild(detailsElement);
+
+          suggestionElement.addEventListener("click", () => {
+            scriptSearchInput.value = scriptItem.title;
+            scriptSuggestionsContainer.innerHTML = "";
+            executeScript(scriptItem);
+          });
+          scriptSuggestionsContainer.appendChild(suggestionElement);
+        });
+      }
+
+      async function fetchScriptContent(scriptItem) {
+        try {
+          if (scriptItem.type === "local") {
+            const fullScriptPath = path.join(
+              scriptsBaseDirectory,
+              `${scriptItem.title}.txt`,
+            );
+            if (!fs.existsSync(fullScriptPath)) {
+              console.warn(`Script file not found at: ${fullScriptPath}`);
+              return null;
+            }
+            return fs.readFileSync(fullScriptPath, "utf8");
+          } else if (scriptItem.type === "scriptblox") {
+            if (scriptItem.rawScript) {
+              const response = await fetch(scriptItem.rawScript);
+              if (response.ok) {
+                return await response.text();
+              }
+            }
+
+            if (scriptItem._id) {
+              try {
+                const directUrl = `https://scriptblox.com/raw/${scriptItem._id}`;
+                const directRes = await fetch(directUrl);
+                if (directRes.ok) {
+                  const content = await directRes.text();
+                  if (
+                    content &&
+                    content.length > 0 &&
+                    !content.includes("<!DOCTYPE html>")
+                  ) {
+                    return content;
+                  }
+                }
+              } catch (directErr) {
+                console.log("Direct fetch failed:", directErr);
+              }
+
+              const res = await fetch(
+                `https://scriptblox.com/api/script/${scriptItem._id}`,
+              );
+              const data = await res.json();
+
+              if (data && data.script) {
+                return data.script;
+              }
+
+              if (data && data.result) {
+                if (data.result.script) return data.result.script;
+                if (data.result.content) return data.result.content;
+              }
+            }
+          } else if (scriptItem.type === "rscripts" && scriptItem._id) {
+            if (scriptItem.rawScript) {
+              return scriptItem.rawScript;
+            }
+
+            const res = await fetch(
+              `https://rscripts.net/api/v2/script?id=${scriptItem._id}`,
+            );
+            const data = await res.json();
+            if (data && data.script) {
+              return data.script;
+            }
+          }
+
+          return null;
+        } catch (error) {
+          console.error(
+            `Error fetching script content for ${scriptItem.title}:`,
+            error,
+          );
+          return null;
+        }
+      }
+
+      async function displayFilteredScriptSuggestions(searchText) {
+        scriptSuggestionsContainer.innerHTML = "";
+        selectedSuggestionIndex = -1;
+        currentlyDisplayedScriptNames = [];
+
+        if (!searchText) {
+          displayInitialScriptSuggestions();
+          return;
+        }
+
+        const lowerSearchText = searchText.toLowerCase();
+
+        let filteredScripts = allAvailableScriptNames.filter(
+          (script) =>
+            script.title.toLowerCase().includes(lowerSearchText) ||
+            script.game.toLowerCase().includes(lowerSearchText),
+        );
+
+        if (filteredScripts.length < 5 && searchText.length >= 3) {
+          const loadingIndicator = document.createElement("div");
+          loadingIndicator.classList.add("suggestion-item");
+          scriptSuggestionsContainer.appendChild(loadingIndicator);
+
+          const remoteScripts = await searchRemoteScripts(searchText);
+
+          const existingTitles = new Set(
+            filteredScripts.map((s) => s.title.toLowerCase()),
+          );
+          const uniqueRemoteScripts = remoteScripts.filter(
+            (s) => !existingTitles.has(s.title.toLowerCase()),
+          );
+
+          filteredScripts = [...filteredScripts, ...uniqueRemoteScripts];
+
+          scriptSuggestionsContainer.innerHTML = "";
+        }
+
+        const scriptsToShow = filteredScripts.slice(0, 20);
+        currentlyDisplayedScriptNames = scriptsToShow;
+
+        if (scriptsToShow.length === 0) {
+          const noResults = document.createElement("div");
+          noResults.classList.add("suggestion-item");
+          noResults.textContent = "No scripts found";
+          scriptSuggestionsContainer.appendChild(noResults);
+          return;
+        }
+
+        scriptsToShow.forEach((scriptItem) => {
+          const suggestionElement = document.createElement("div");
+          suggestionElement.classList.add("suggestion-item");
+
+          const titleElement = document.createElement("span");
+          titleElement.textContent = scriptItem.getDisplayText();
+          suggestionElement.appendChild(titleElement);
+
+          const detailsElement = document.createElement("small");
+          detailsElement.textContent = scriptItem.getDetailsText();
+          detailsElement.style.display = "block";
+          detailsElement.style.opacity = "0.7";
+          suggestionElement.appendChild(detailsElement);
+
+          suggestionElement.addEventListener("click", () => {
+            scriptSearchInput.value = scriptItem.title;
+            scriptSuggestionsContainer.innerHTML = "";
+            executeScript(scriptItem);
+          });
+          scriptSuggestionsContainer.appendChild(suggestionElement);
+        });
+
+        if (currentlyDisplayedScriptNames.length > 0) {
+          selectedSuggestionIndex = 0;
+          highlightCurrentSuggestion(selectedSuggestionIndex);
+        }
+      }
+
+      async function searchRemoteScripts(query) {
+        try {
+          const scriptHub = localStorage.getItem("scriptHub") || "both";
+
+          if (scriptHub === "both") {
+            const [scriptbloxResults, rscriptsResults] = await Promise.all([
+              searchScriptbloxScripts(query),
+              searchRscriptsScripts(query),
+            ]);
+
+            const maxLength = Math.max(
+              scriptbloxResults.length,
+              rscriptsResults.length,
+            );
+            const alternatingResults = [];
+            for (let i = 0; i < maxLength; i++) {
+              if (i < scriptbloxResults.length)
+                alternatingResults.push(scriptbloxResults[i]);
+              if (i < rscriptsResults.length)
+                alternatingResults.push(rscriptsResults[i]);
+            }
+            return alternatingResults;
+          } else if (scriptHub === "scriptblox") {
+            return await searchScriptbloxScripts(query);
+          } else if (scriptHub === "rscripts") {
+            return await searchRscriptsScripts(query);
+          }
+
+          return [];
+        } catch (error) {
+          console.error("Error searching remote scripts:", error);
+          return [];
+        }
+      }
+
+      async function searchScriptbloxScripts(query) {
+        try {
+          const searchUrl = `https://scriptblox.com/api/script/search?q=${encodeURIComponent(query)}&`;
+          const response = await fetch(searchUrl);
+          const data = await response.json();
+
+          if (
+            data &&
+            data.result &&
+            data.result.scripts &&
+            data.result.scripts.length > 0
+          ) {
+            return data.result.scripts.map((script) => {
+              const gameName =
+                (script.game && (script.game.name || script.game.title)) ||
+                "Unknown Game";
+              return new ScriptItem(script.title || "Unnamed Script", null, {
+                type: "scriptblox",
+                source: "Scriptblox",
+                game: gameName,
+                _id: script._id,
+                rawScript: script.rawScript,
+              });
+            });
+          }
+          return [];
+        } catch (error) {
+          console.error("Error searching Scriptblox:", error);
+          return [];
+        }
+      }
+
+      async function searchRscriptsScripts(query) {
+        try {
+          const rUrl = `https://rscripts.net/api/v2/scripts?q=${encodeURIComponent(query)}&page=1&orderBy=date`;
+          const rRes = await fetch(rUrl);
+          if (!rRes.ok) {
+            console.error(
+              "Failed to search Rscripts:",
+              rRes.status,
+              rRes.statusText,
+            );
+            return [];
+          }
+          const rData = await rRes.json();
+
+          if (rData && rData.scripts) {
+            return rData.scripts.map((script) => {
+              const gameName =
+                (script.game && (script.game.name || script.game.title)) ||
+                "Unknown Game";
+              return new ScriptItem(script.title || "Unnamed Script", null, {
+                type: "rscripts",
+                source: "Rscripts",
+                game: gameName,
+                _id: script._id,
+                rawScript: script.script,
+              });
+            });
+          }
+          return [];
+        } catch (error) {
+          console.error("Error searching Rscripts:", error);
+          return [];
+        }
+      }
+
+      async function executeScript(scriptItem) {
+        try {
+          if (!scriptItem) {
+            console.warn("No script provided to execute.");
+            return;
+          }
+
+          if (!scriptItem.content) {
+            console.log(`Fetching content for script: ${scriptItem.title}`);
+            scriptItem.content = await fetchScriptContent(scriptItem);
+          }
+
+          if (!scriptItem.content) {
+            ipcRenderer.send("hide-spotlight-window");
+            console.warn(`No content found for script: ${scriptItem.title}`);
+            return;
+          }
+
+          ipcRenderer.send("invokeAction", scriptItem.content);
+
+          scriptSearchInput.value = "";
+          scriptSuggestionsContainer.innerHTML = "";
+          currentlyDisplayedScriptNames = [];
+
+          ipcRenderer.send("hide-spotlight-window");
+
+          loadAvailableScriptNames();
+        } catch (error) {
+          console.error(`Error executing script ${scriptItem.title}:`, error);
+        }
+      }
+
+      async function quickExecuteRawText(rawText) {
+        if (!rawText || rawText.trim() === "") return;
+        try {
+          ipcRenderer.send("invokeAction", rawText);
+        } catch (err) {
+          console.error("Quick execute failed:", err);
+        } finally {
+          scriptSearchInput.value = "";
+          scriptSuggestionsContainer.innerHTML = "";
+          ipcRenderer.send("hide-spotlight-window");
+        }
+      }
+
+      function highlightCurrentSuggestion(suggestionIndex) {
+        const suggestionElements =
+          scriptSuggestionsContainer.getElementsByClassName("suggestion-item");
+        for (let i = 0; i < suggestionElements.length; i++) {
+          suggestionElements[i].classList.remove("selected");
+        }
+        if (
+          suggestionIndex >= 0 &&
+          suggestionIndex < suggestionElements.length
+        ) {
+          suggestionElements[suggestionIndex].classList.add("selected");
+          suggestionElements[suggestionIndex].scrollIntoView({
+            block: "nearest",
+          });
+        }
+      }
+
+      scriptSearchInput.addEventListener("input", (event) => {
+        const mode =
+          (spotlightModeSelect && spotlightModeSelect.value) || "script-hub";
+        if (mode === "quick-execute") return;
+        displayFilteredScriptSuggestions(event.target.value);
+      });
+
+      scriptSearchInput.addEventListener("keydown", async (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          const mode =
+            (spotlightModeSelect && spotlightModeSelect.value) || "script-hub";
+          if (mode === "quick-execute") {
+            await quickExecuteRawText(scriptSearchInput.value);
+            return;
+          }
+
+          if (
+            selectedSuggestionIndex !== -1 &&
+            currentlyDisplayedScriptNames[selectedSuggestionIndex]
+          ) {
+            const selectedItem =
+              currentlyDisplayedScriptNames[selectedSuggestionIndex];
+            scriptSearchInput.value = selectedItem.title;
+            executeScript(selectedItem);
+          } else if (scriptSearchInput.value.trim() !== "") {
+            const typedScriptName = scriptSearchInput.value.trim();
+
+            const matchedScript = allAvailableScriptNames.find(
+              (script) =>
+                script.title.toLowerCase() === typedScriptName.toLowerCase(),
+            );
+
+            if (matchedScript) {
+              executeScript(matchedScript);
+            } else if (currentlyDisplayedScriptNames.length > 0) {
+              executeScript(currentlyDisplayedScriptNames[0]);
+            } else {
+              const scriptItem = new ScriptItem(typedScriptName, null, {
+                type: "local",
+                source: "Local",
+              });
+              executeScript(scriptItem);
+            }
+          }
+
+          scriptSuggestionsContainer.innerHTML = "";
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          if (currentlyDisplayedScriptNames.length > 0) {
+            selectedSuggestionIndex =
+              (selectedSuggestionIndex + 1) %
+              currentlyDisplayedScriptNames.length;
+            highlightCurrentSuggestion(selectedSuggestionIndex);
+          }
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          if (currentlyDisplayedScriptNames.length > 0) {
+            selectedSuggestionIndex =
+              (selectedSuggestionIndex -
+                1 +
+                currentlyDisplayedScriptNames.length) %
+              currentlyDisplayedScriptNames.length;
+            highlightCurrentSuggestion(selectedSuggestionIndex);
+          }
+        } else if (event.key === "Escape") {
+          ipcRenderer.send("hide-spotlight-window");
+        }
+      });
+
+      ipcRenderer.on("spotlight-shown", () => {
+        scriptSearchInput.value = "";
+        scriptSuggestionsContainer.innerHTML = "";
+        currentlyDisplayedScriptNames = [];
+        selectedSuggestionIndex = -1;
+
+        try {
+          const mode =
+            (spotlightModeSelect && spotlightModeSelect.value) ||
+            localStorage.getItem("spotlightMode") ||
+            "script-hub";
+          updateModeUI(mode);
+          if (mode !== "quick-execute") loadAvailableScriptNames();
+        } catch (_) {
+          loadAvailableScriptNames();
+        }
+        scriptSearchInput.focus();
+        try {
+          const savedMode =
+            localStorage.getItem("spotlightMode") || "script-hub";
+          if (spotlightModeSelect) spotlightModeSelect.value = savedMode;
+        } catch (_) {}
+
+        applyAccentColor();
+      });
+
+      window.addEventListener("storage", function (e) {
+        if (e.key === "scriptHub") {
+          loadAvailableScriptNames();
+        }
+      });
+
+      loadAvailableScriptNames();
+      scriptSearchInput.focus();
+
+      applyAccentColor();
+
+      ipcRenderer.on("apply-vibrancy-opacity", (_, value) => {
+        try {
+          document.documentElement.style.setProperty(
+            "--vibrancy-opacity",
+            String(value),
+          );
+        } catch (e) {
+          console.error("Failed to apply vibrancy opacity to spotlight:", e);
+        }
+      });
+    </script>
   </body>
 </html>

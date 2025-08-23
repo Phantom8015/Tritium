@@ -11,6 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const fetch = require("node-fetch");
+const chokidar = require("chokidar");
 const { version: currentVersion } = require("./package.json");
 const { nativeTheme } = require("electron");
 const { exec } = require("child_process");
@@ -22,6 +23,134 @@ let serverPort = null;
 let lastError = null;
 let localStorage = require("electron-localstorage");
 let spotlightWindow = null;
+let watcher = null;
+let currentLogPath = null;
+let filePosition = 0;
+let checkLogInterval = null;
+
+function findLatestLogFile() {
+  const homedir = require("os").homedir();
+  const logDir = path.join(homedir, "Library", "Logs", "Roblox");
+  try {
+    const files = fs
+      .readdirSync(logDir)
+      .filter((file) => file.endsWith(".log"))
+      .map((file) => ({
+        path: path.join(logDir, file),
+        mtime: fs.statSync(path.join(logDir, file)).mtime,
+      }))
+      .sort((a, b) => b.mtime - a.mtime);
+
+    return files.length > 0 ? files[0].path : null;
+  } catch (err) {
+    console.error("Error finding log files:", err);
+    return null;
+  }
+}
+
+function switchToNewLogFile(mainWindow) {
+  const newLogPath = findLatestLogFile();
+
+  if (!newLogPath) {
+    console.log("No log file found");
+    return;
+  }
+
+  if (newLogPath !== currentLogPath) {
+    console.log(`Switching to new log file: ${newLogPath}`);
+
+    filePosition = 0;
+
+    if (watcher) {
+      watcher.close();
+    }
+
+    currentLogPath = newLogPath;
+
+    try {
+      const content = fs.readFileSync(currentLogPath, "utf8");
+      const lines = content.split("\n").filter((line) => line.trim() !== "");
+      filePosition = content.length;
+
+      lines.forEach((line) => {
+        mainWindow.webContents.send("log-update", line);
+      });
+      mainWindow.webContents.send(
+        "log-update",
+        "Initial log content restored " + Date.now(),
+      );
+    } catch (err) {
+      console.error("Error reading initial log content:", err);
+    }
+    watcher = chokidar.watch(currentLogPath, {
+      persistent: true,
+      ignoreInitial: true,
+    });
+
+    watcher.on("change", () => {
+      try {
+        const stats = fs.statSync(currentLogPath);
+        if (stats.size < filePosition) {
+          filePosition = 0;
+        }
+
+        const stream = fs.createReadStream(currentLogPath, {
+          encoding: "utf8",
+          start: filePosition,
+        });
+
+        let remaining = "";
+        stream.on("data", (data) => {
+          const lines = (remaining + data).split("\n");
+          remaining = lines.pop();
+
+          lines
+            .filter((line) => line.trim() !== "")
+            .forEach((line) => {
+              try {
+                mainWindow.webContents.send("log-update", line);
+              } catch (err) {
+                console.error("Error sending log update to main window:", err);
+              }
+            });
+        });
+
+        stream.on("end", () => {
+          filePosition = stats.size;
+        });
+
+        stream.on("error", (err) => {
+          console.error("Error reading log file:", err);
+        });
+      } catch (err) {
+        console.error("Error handling log change:", err);
+      }
+    });
+
+    watcher.on("error", (err) => {
+      console.error("Log watcher error:", err);
+    });
+  }
+}
+
+function logstart(mainWindow) {
+  switchToNewLogFile(mainWindow);
+
+  checkLogInterval = setInterval(() => {
+    switchToNewLogFile(mainWindow);
+  }, 5000);
+
+  return { success: true, path: currentLogPath };
+}
+
+function logend() {
+  if (watcher) {
+    watcher.close();
+  }
+  if (checkLogInterval) {
+    clearInterval(checkLogInterval);
+  }
+}
 
 function runMacSploitInstall() {
   return new Promise((resolve, reject) => {
@@ -104,8 +233,7 @@ ipcMain.on("invokeAction", function (event, data) {
 });
 
 ipcMain.handle("start-log-watcher", async () => {
-  const logWatcher = require("./logWatcher.js");
-  return logWatcher.start(mainWindow);
+  return logstart(mainWindow);
 });
 
 ipcMain.handle("show-save-dialog", async () => {
@@ -304,6 +432,13 @@ function initializeSpotlight() {
     spotlightWindow = null;
   });
 
+  spotlightWindow.on("hide", () => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+      }
+    } catch (_) {}
+  });
+
   spotlightWindow.on("blur", () => {
     if (
       spotlightWindow &&
@@ -314,17 +449,9 @@ function initializeSpotlight() {
         spotlightWindow.webContents.devToolsWebContents;
 
       if (!(devToolsWebContents && devToolsWebContents.isFocused())) {
-        spotlightWindow.hide();
       }
     }
   });
-}
-function buildMessage(type, bodyString = "") {
-  const bodyBuffer = Buffer.from(bodyString + "\0", "utf8");
-  const header = Buffer.alloc(16);
-  header.writeUInt8(type, 0);
-  header.writeBigUInt64LE(BigInt(bodyBuffer.length), 8);
-  return Buffer.concat([header, bodyBuffer]);
 }
 
 function showSpotlight() {
@@ -370,6 +497,13 @@ ipcMain.on("hide-spotlight-window", () => {
   ) {
     spotlightWindow.hide();
   }
+
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (typeof mainWindow.blur === "function") mainWindow.blur();
+    }
+  } catch (_) {}
+
   spotlightWindow = null;
 });
 
@@ -393,6 +527,27 @@ ipcMain.on("set-vibrancy", (event, enableVibrancy) => {
 ipcMain.on("set-spvibrancy", (event, enableVibrancy) => {
   _vibrancyEnabledSpotlight = !!enableVibrancy;
   applyDarkVibrancy(_vibrancyEnabledMain, _vibrancyEnabledSpotlight);
+});
+
+ipcMain.on("vibrancy-opacity-changed", (event, value) => {
+  try {
+    if (spotlightWindow && !spotlightWindow.isDestroyed()) {
+      spotlightWindow.webContents.send("apply-vibrancy-opacity", value);
+    }
+  } catch (_) {}
+});
+
+ipcMain.on("set-spotlight-size", (event, size) => {
+  try {
+    if (spotlightWindow && !spotlightWindow.isDestroyed()) {
+      const w = parseInt(size && size.width, 10) || 600;
+      const h = parseInt(size && size.height, 10) || 300;
+      spotlightWindow.setSize(w, h);
+      spotlightWindow.center();
+    }
+  } catch (e) {
+    console.error("Failed to set spotlight size:", e);
+  }
 });
 
 async function ligma(scriptContent) {
