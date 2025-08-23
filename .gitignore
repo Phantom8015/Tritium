@@ -4,3 +4,4 @@ build.sh
 web
 .DS_Store
 build
+afterpack.js

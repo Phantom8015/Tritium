@@ -391,9 +391,6 @@ select:focus {
   background: rgba(35, 35, 35, 0.2);
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
 }
-.searched-script {
-  background: rgba(15, 15, 15, 0.4);
-}
 .script-item.searched-script::before {
   content: "";
   position: absolute;
@@ -401,7 +398,24 @@ select:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(28, 28, 28, 0.4);
+  background-image: var(--script-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.36;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.script-item.searched-script::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(28, 28, 28, 0.06);
+  pointer-events: none;
   z-index: 0;
 }
 .script-content {
@@ -818,7 +832,7 @@ footer #toggleConsole.locked {
   color: #e0e0e0;
   cursor: pointer;
   font-size: 15px;
-  background: rgba(28, 28, 28, 0.3);
+  background: rgba(28, 28, 28, 0.18);
 }
 .context-menu-item:hover {
   background: rgba(0, 0, 0, 0.5);
@@ -1222,12 +1236,33 @@ footer .console-btn {
   z-index: 2000;
 }
 .top-bar-title {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
   font-weight: 500;
   font-size: 16px;
   color: #ffffff;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+
+  pointer-events: none;
+}
+
+.version {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0e0e0;
+  vertical-align: middle;
+  font-weight: 500;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4) inset;
+
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
 }
 
 .port-selector-wrapper {
@@ -1235,6 +1270,7 @@ footer .console-btn {
   align-items: center;
   gap: 6px;
   margin-right: 8px;
+  margin-left: auto;
   -webkit-app-region: no-drag;
   font-size: 12px;
 }
@@ -1275,12 +1311,12 @@ footer .console-btn {
     box-shadow 0.3s;
 }
 .port-status-dot.online {
-  background: #2ecc71;
-  box-shadow: 0 0 6px #2ecc71;
+  background: rgba(46, 204, 112, 0.8);
+  box-shadow: 0 0 6px rgba(46, 204, 112, 0.883);
 }
 .port-status-dot.offline {
-  background: #e74c3c;
-  box-shadow: 0 0 6px #e74c3c;
+  background: rgba(231, 77, 60, 0.8);
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.8);
 }
 
 .port-dropdown {

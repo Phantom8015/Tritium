@@ -20,9 +20,11 @@ const deleteScriptBtn = document.getElementById("deleteScript");
 const autoExecuteScriptBtn = document.getElementById("autoExecuteScript");
 const autoExecuteCheckbox = document.getElementById("autoExecuteCheckbox");
 const fs = require("fs");
-const { spawn, exec } = require("child_process");
+const { spawn } = require("child_process");
 const path = require("path");
 const { console } = require("inspector");
+const net = require("net");
+const { clipboard } = require("electron");
 const consoleOutput = document.getElementById("consoleOutput");
 const clearConsoleBtn = document.getElementById("clearConsole");
 const settingsButton = document.getElementById("settings-button");
@@ -336,7 +338,7 @@ function pingPort(port, onDone) {
     if (onDone) onDone();
     return;
   }
-  const net = require("net");
+
   const socket = new net.Socket();
   let handled = false;
   socket.setTimeout(700);
@@ -1396,7 +1398,6 @@ function createEditor(tabId, content) {
                 if (!isMonacoFocused) return;
                 try {
                   if (typeof require === "function") {
-                    const { clipboard } = require("electron");
                     const text = clipboard.readText();
                     if (text && editorAPI._editor) {
                       e.preventDefault();
@@ -2848,7 +2849,11 @@ async function renderScriptItem(script, source) {
   item.className = "script-item searched-script";
 
   let bg = getScriptImage(script, source);
-  if (bg) item.style.backgroundImage = `url('${bg}')`;
+  if (bg) {
+    item.style.setProperty("--script-bg", `url('${bg}')`);
+  } else {
+    item.style.removeProperty("--script-bg");
+  }
 
   const content = document.createElement("div");
   content.className = "script-content";
@@ -3359,6 +3364,22 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
   } catch (_) {}
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    const pkg = window.require && window.require("./package.json");
+    const ver = pkg && pkg.version ? `v${pkg.version}` : null;
+    const el = document.getElementById("version");
+    if (el) {
+      if (ver) {
+        el.textContent = ver;
+        el.setAttribute("title", `Version ${ver}`);
+      } else {
+        el.style.display = "none";
+      }
+    }
+  } catch (e) {}
 });
 
 let workspaceAutosaveTimer = null;

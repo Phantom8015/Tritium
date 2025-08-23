@@ -180,63 +180,9 @@
       ::-webkit-scrollbar-thumb {
         background: transparent;
       }
-
-      .spotlight-loading {
-        position: absolute;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 50;
-        pointer-events: none;
-      }
-      .spotlight-spinner {
-        display: inline-block;
-        width: 48px;
-        height: 48px;
-        pointer-events: none;
-      }
-      .spotlight-spinner div {
-        box-sizing: border-box;
-        display: block;
-        position: absolute;
-        width: 38px;
-        height: 38px;
-        margin: 5px;
-        border: 4px solid var(--accent-color, #7fb4ff);
-        border-radius: 50%;
-        animation: spotlight-spin 1.2s linear infinite;
-        border-color: var(--accent-color, #7fb4ff) transparent transparent
-          transparent;
-        opacity: 0.95;
-      }
-      .spotlight-spinner div:nth-child(1) {
-        animation-delay: -0.45s;
-      }
-      .spotlight-spinner div:nth-child(2) {
-        animation-delay: -0.3s;
-      }
-      .spotlight-spinner div:nth-child(3) {
-        animation-delay: -0.15s;
-      }
-      @keyframes spotlight-spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
     </style>
   </head>
   <body>
-    <div id="spotlight-loading" class="spotlight-loading" aria-hidden="true">
-      <div class="spotlight-spinner" role="status" aria-label="Loading">
-        <div></div>
-        <div></div>
-        <div></div>
-      </div>
-    </div>
     <div class="spotlight-container">
       <input
         type="text"
@@ -314,26 +260,6 @@
         "Tritium",
       );
 
-      function showLoading() {
-        try {
-          const el = document.getElementById("spotlight-loading");
-          if (el) {
-            el.style.display = "flex";
-            el.setAttribute("aria-hidden", "false");
-          }
-        } catch (_) {}
-      }
-
-      function hideLoading() {
-        try {
-          const el = document.getElementById("spotlight-loading");
-          if (el) {
-            el.style.display = "none";
-            el.setAttribute("aria-hidden", "true");
-          }
-        } catch (_) {}
-      }
-
       function applyAccentColor() {
         try {
           const accentColor = localStorage.getItem("accentColor") || "#7FB4FF";
@@ -385,7 +311,6 @@
 
       async function loadAvailableScriptNames() {
         try {
-          showLoading();
           const filenames = await ipcRenderer.invoke("list-scripts");
           const mappedNames = filenames.map((fileName) =>
             fileName.replace(/\.txt$/, ""),
@@ -435,11 +360,9 @@
           } catch (_) {}
 
           displayInitialScriptSuggestions();
-          hideLoading();
         } catch (error) {
           console.error("Error loading script names:", error);
           allAvailableScriptNames = [];
-          hideLoading();
         }
       }
 
@@ -638,10 +561,6 @@
         );
 
         if (filteredScripts.length < 5 && searchText.length >= 3) {
-          const loadingIndicator = document.createElement("div");
-          loadingIndicator.classList.add("suggestion-item");
-          scriptSuggestionsContainer.appendChild(loadingIndicator);
-
           const remoteScripts = await searchRemoteScripts(searchText);
 
           const existingTitles = new Set(
