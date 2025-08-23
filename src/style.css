@@ -505,39 +505,31 @@ footer #toggleConsole.locked {
   pointer-events: none;
   transform: translateY(4px);
 }
-.container footer .footer-console-buttons > button.console-btn {
-  background: rgba(255, 255, 255, 0.02) !important;
-  color: #e0e0e0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 10px !important;
-  width: 34px !important;
-  height: 34px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 13px !important;
-  cursor: pointer !important;
+.footer-console-buttons .console-btn {
+  background: transparent;
+  color: #e0e0e0;
+  border: none;
+  border-radius: 12px !important;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
   transition:
-    all 0.18s ease,
-    filter 0.18s ease,
-    background 0.18s ease,
-    color 0.14s !important;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.35)) !important;
-  backdrop-filter: blur(6px) !important;
+    all 0.2s ease,
+    filter 0.2s ease;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.35));
 }
-.container footer .footer-console-buttons > button.console-btn i {
-  margin: 0 !important;
-  font-size: 14px !important;
-  line-height: 1 !important;
+.footer-console-buttons .console-btn i {
+  margin: 0;
+  font-size: 16px;
 }
-.container footer .footer-console-buttons > button.console-btn:hover {
-  background: rgba(255, 255, 255, 0.035) !important;
-  filter: drop-shadow(0 0 8px var(--accent-color)) !important;
-  color: var(--accent-color) !important;
-}
-.container footer .footer-console-buttons > button.console-btn:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(127, 180, 255, 0.12) !important;
+.footer-console-buttons .console-btn:hover {
+  background: transparent;
+  filter: drop-shadow(0 0 8px var(--accent-color));
+  color: var(--accent-color);
 }
 .footer-console-buttons .console-btn:active {
   transform: scale(0.92);

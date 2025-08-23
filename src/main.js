@@ -2461,10 +2461,25 @@ async function renderSidebar() {
   savedCategory.textContent = "Saved scripts";
   scriptsList.appendChild(savedCategory);
   if (savedScripts.length === 0) {
-    const noScripts = document.createElement("div");
-    noScripts.className = "script-item";
-    noScripts.textContent = "No saved scripts";
-    scriptsList.appendChild(noScripts);
+    const item = document.createElement("div");
+    item.className = "script-item saved-script disabled";
+
+    const content = document.createElement("div");
+    content.className = "script-content";
+
+    const title = document.createElement("div");
+    title.className = "script-title";
+    title.textContent = "No saved scripts";
+    content.appendChild(title);
+
+    const desc = document.createElement("div");
+    desc.className = "script-description";
+    desc.textContent = "Create a new script to see it listed here.";
+    desc.style.opacity = "0.7";
+    content.appendChild(desc);
+
+    item.appendChild(content);
+    scriptsList.appendChild(item);
   } else {
     savedScripts.forEach((script) => {
       const item = document.createElement("div");
