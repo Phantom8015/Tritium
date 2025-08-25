@@ -99,14 +99,16 @@ body::-webkit-scrollbar,
 }
 .console-container {
   height: 240px;
-  margin: 0 8px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 8px;
   display: flex;
   flex-direction: column;
-  position: relative;
+  z-index: 10;
+  overflow: hidden;
+  position: static;
   left: auto;
   right: auto;
   bottom: auto;
-  background: transparent;
   transition:
     height 0.3s ease,
     margin-bottom 0.3s ease,
@@ -204,7 +206,6 @@ body::-webkit-scrollbar,
   background: transparent;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
   overflow: visible;
   margin: 8px;
   margin-top: 70px;
@@ -212,6 +213,48 @@ body::-webkit-scrollbar,
 }
 .sidebar.open {
   width: 300px;
+}
+
+.sidebar {
+  position: relative;
+}
+.sidebar::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: -4px;
+  bottom: 12px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+  pointer-events: none;
+}
+.sidebar:hover::after {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.workspace-sidebar {
+  position: relative;
+}
+.workspace-sidebar::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  right: 1px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+  pointer-events: none;
+}
+.workspace-sidebar:hover::after {
+  background: rgba(255, 255, 255, 0.2);
 }
 .accent-color-input {
   margin: 16px 16px 8px 16px;
@@ -471,17 +514,6 @@ select:focus {
 }
 .script-patched {
   color: #e74c3c;
-}
-.tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.7);
-  color: #e5e9f0;
-  padding: 8px 12px;
-  border-radius: 5px;
-  font-size: 14px;
-  display: none;
-  z-index: 20;
-  filter: drop-shadow(0, 0, 10px rgba(0, 0, 0, 0.7));
 }
 footer {
   height: 80px;
@@ -820,22 +852,109 @@ footer #toggleConsole.locked {
 }
 .context-menu {
   position: fixed;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 4px;
+  background: rgba(28, 28, 28, 0.35);
+  border-radius: 10px;
   z-index: 1000;
   min-width: 150px;
-  display: none;
+
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.995);
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  transition:
+    opacity 0.18s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+.context-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
 }
 .context-menu-item {
   padding: 8px 12px;
   color: #e0e0e0;
   cursor: pointer;
   font-size: 15px;
-  background: rgba(28, 28, 28, 0.18);
+  background: rgba(28, 28, 28, 0.22);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition:
+    background 0.15s,
+    color 0.12s,
+    transform 0.12s;
 }
 .context-menu-item:hover {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+.context-menu-item i {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.monaco-editor .suggest-widget,
+.monaco-editor .monaco-editor-hover,
+.monaco-editor .monaco-editor-hover .monaco-hover {
+  background: rgba(28, 28, 28, 0.82) !important;
+  z-index: 2147483647 !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25) !important;
+  color: #e0e0e0 !important;
+}
+.monaco-editor .suggest-widget {
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+  opacity: 1;
+}
+.monaco-editor .suggest-widget .monaco-list-row,
+.monaco-editor .suggest-widget .monaco-list-row .label-description {
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
+}
+.monaco-editor .suggest-widget .monaco-list-row.focused,
+.monaco-editor .suggest-widget .monaco-list-row:hover {
+  transform: translateY(0);
+}
+.monaco-editor .monaco-editor-hover,
+.monaco-editor .monaco-editor-hover .monaco-hover {
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+.monaco-editor .suggest-widget .monaco-list-row {
+  background: transparent !important;
+  color: #e0e0e0 !important;
+  border-radius: 6px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.monaco-editor .suggest-widget .monaco-list-row:hover,
+.monaco-editor .suggest-widget .monaco-list-row.focused {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.monaco-editor .suggest-widget .monaco-list-row .codicon {
+  font-size: 18px !important;
+  margin-right: 8px !important;
+  opacity: 0.95 !important;
+}
+.monaco-editor .suggest-widget .monaco-list-row .label-description {
+  color: #b0b0b0 !important;
+}
+.monaco-editor .suggest-widget .monaco-list-row .label-details {
+  color: #7fb4ff !important;
 }
 .context-menu-separator {
   height: 1px;
@@ -878,18 +997,10 @@ footer #toggleConsole.locked {
   pointer-events: none;
   z-index: 1;
 }
-.console-container {
-  padding-top: 8px;
-}
-.console-output {
-  padding-right: 12px;
-  position: relative;
-}
 .console-output {
   flex: 1;
   white-space: nowrap;
   overflow-x: auto;
-  text-overflow: ellipsis;
   padding: 5px 10px;
   font-size: 15px;
   font-family: "Fira Code", monospace;
@@ -1004,6 +1115,11 @@ footer .console-btn {
     opacity: 0;
   }
 }
+
+.settings-content h2 {
+  font-weight: bold;
+  align-self: center;
+}
 .rename-content,
 .discord-content,
 .settings-content {
@@ -1042,11 +1158,7 @@ footer .console-btn {
 .rename-content h2,
 .rename-content input {
   width: 100%;
-  padding: 10px;
-  margin: 15px 0;
-  background: rgba(28, 28, 28, 0.3);
   color: #e0e0e0;
-  font-size: 15px;
   border-radius: 8px;
   box-sizing: border-box;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
@@ -1068,6 +1180,19 @@ footer .console-btn {
 .settings-actions .button,
 .sudo-buttons .button {
   min-width: 100px;
+}
+#confirmRename {
+  margin-right: 12px;
+}
+#cancelRename {
+  margin-right: 180px;
+}
+
+#confirmRename:hover,
+#confirmRename:focus,
+#cancelRename:hover,
+#cancelRename:focus {
+  color: var(--accent-color);
 }
 .copilot-button {
   display: flex;
@@ -1127,7 +1252,7 @@ footer .console-btn {
   padding: 0 18px;
   cursor: pointer;
   width: 408px;
-  margin-top: 30px;
+  margin-top: 5px;
   font-size: 15px;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   transition: background 0.2s;
@@ -1225,27 +1350,30 @@ footer .console-btn {
   top: 0;
   left: 0;
   right: 0;
-  margin: 8px;
   background: transparent;
-  height: 55px;
+  height: 63px;
+  margin-right: 10px;
+  margin-left: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  padding: 0 12px;
   -webkit-app-region: drag;
   z-index: 2000;
 }
 .top-bar-title {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   font-weight: 500;
   font-size: 16px;
   color: #ffffff;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
-
   pointer-events: none;
 }
 
@@ -1269,7 +1397,7 @@ footer .console-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-right: 8px;
+  margin-right: 15px;
   margin-left: auto;
   -webkit-app-region: no-drag;
   font-size: 12px;
@@ -1682,6 +1810,11 @@ footer .console-btn {
   height: 50px;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
 }
+
+#workspace-toggle-btn,
+#sidebar-toggle-btn {
+  display: none !important;
+}
 .button.sidebar-toggle-btn i {
   margin: 0;
   font-size: 22px;
@@ -1712,6 +1845,23 @@ footer .console-btn {
   gap: 8px;
 }
 
+.hotkeys-disclaimer {
+  color: #bfcde0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.settings-group.hotkeys-inline {
+  grid-template-columns: 1fr;
+}
+.settings-group.hotkeys-inline .hotkeys-disclaimer {
+  grid-column: 1 / -1;
+  display: block;
+  max-width: 408px;
+  margin: 1px auto;
+  text-align: center;
+}
+
 .setting-control .accent-color-input {
   flex: 1;
   margin: 0;
@@ -1728,7 +1878,6 @@ footer .console-btn {
   width: 0;
   transition: width 0.3s;
   background: transparent;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;

@@ -625,7 +625,7 @@ function createWindow() {
       devTools: !app.isPackaged,
     },
     titleBarStyle: "hidden",
-    trafficLightPosition: { x: 27, y: 27 },
+    trafficLightPosition: { x: 27, y: 24 },
     icon: __dirname + "./icon.png",
     title: "Tritium",
   });

@@ -39,8 +39,6 @@ const scriptsDirectory = path.join(
 const toggleConsole = document.getElementById("toggleConsole");
 const consoleContainer = document.querySelector(".console-container");
 const toggleSidebar = document.getElementById("sidebar-toggle-btn");
-const copilotBtn = document.getElementById("copilot-button");
-const copilotPrompter = document.getElementById("copilot-prompter");
 const promptInput = document.getElementById("promptInput");
 const generateBtn = document.getElementById("generateBtn");
 const cancelBtn = document.getElementById("cancelBtn");
@@ -442,62 +440,6 @@ msUpdateBtn.addEventListener("click", async () => {
   } finally {
     msUpdateBtn.innerHTML = "Update MacSploit";
   }
-});
-
-copilotBtn.addEventListener("click", () => {
-  copilotPrompter.classList.toggle("visible");
-  if (copilotPrompter.classList.contains("visible")) {
-    promptInput.focus();
-  }
-});
-
-generateBtn.addEventListener("click", async () => {
-  const prompt = promptInput.value;
-  if (!prompt) {
-    showToast("Prompt cannot be empty", true);
-    return;
-  }
-
-  try {
-    copilotPrompter.classList.add("loading");
-    generateBtn.innerHTML = "Generating...";
-
-    const response = await fetch("http://tritiumcopilot.vercel.app/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        script: editors[currentTab].getValue(),
-      }),
-    });
-
-    const data = await response.json();
-    console.log(data);
-    if (data && data.response) {
-      const editor = editors[currentTab];
-      if (editor) {
-        const resp = data.response.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
-        editor.setValue(resp);
-        showToast("Script generated successfully");
-        copilotPrompter.classList.remove("visible");
-        promptInput.value = "";
-      }
-    } else {
-      showToast("Error generating script", true);
-    }
-  } catch (error) {
-    console.error("Error generating script:", error);
-    showToast("Error generating script", true);
-  } finally {
-    copilotPrompter.classList.remove("loading");
-    generateBtn.innerHTML = "Generate";
-  }
-});
-
-cancelBtn.addEventListener("click", () => {
-  copilotPrompter.classList.remove("visible");
 });
 
 discordBtn.addEventListener("click", () => {
@@ -1001,34 +943,6 @@ function createEditor(tabId, content) {
   };
 
   function initMonaco() {
-    const amdRequire = window.amdRequire;
-    if (typeof amdRequire !== "function") {
-      console.error("Monaco AMD loader not found on window.amdRequire");
-
-      const ta = document.createElement("textarea");
-      ta.value = content || "-- New script";
-      ta.style.width = "100%";
-      ta.style.height = "100%";
-      ta.className = "monaco-fallback-textarea";
-      editorWrapper.appendChild(ta);
-      const warn = document.createElement("div");
-      warn.style.position = "absolute";
-      warn.style.top = "8px";
-      warn.style.right = "12px";
-      warn.style.fontSize = "12px";
-      warn.style.opacity = "0.7";
-      warn.textContent = "Monaco loader missing; using fallback.";
-      editorWrapper.appendChild(warn);
-      editorAPI.getValue = () => ta.value;
-      editorAPI.setValue = (v) => (ta.value = v);
-      editorAPI.focus = () => ta.focus();
-      editorAPI.setSize = (w, h) => {
-        if (w) ta.style.width = w;
-        if (h) ta.style.height = h;
-      };
-      return editorAPI;
-    }
-
     console.debug("Loading Monaco modules...");
 
     amdRequire(
@@ -1232,9 +1146,52 @@ function createEditor(tabId, content) {
                 endLineNumber: position.lineNumber,
                 endColumn: word.endColumn,
               };
+
+              const kindMap = {
+                function: monaco.languages.CompletionItemKind.Function,
+                method: monaco.languages.CompletionItemKind.Method,
+                variable: monaco.languages.CompletionItemKind.Variable,
+                class: monaco.languages.CompletionItemKind.Class,
+                property: monaco.languages.CompletionItemKind.Property,
+                field: monaco.languages.CompletionItemKind.Field,
+                module: monaco.languages.CompletionItemKind.Module,
+                keyword: monaco.languages.CompletionItemKind.Keyword,
+                constant: monaco.languages.CompletionItemKind.Constant,
+                enum: monaco.languages.CompletionItemKind.Enum,
+                interface: monaco.languages.CompletionItemKind.Interface,
+                struct: monaco.languages.CompletionItemKind.Struct,
+                event: monaco.languages.CompletionItemKind.Event,
+                operator: monaco.languages.CompletionItemKind.Operator,
+                type: monaco.languages.CompletionItemKind.TypeParameter,
+              };
+
+              function getKind(kw) {
+                if (
+                  /^(function|spawn|delay|wait|pcall|xpcall|coroutine|assert)$/.test(
+                    kw,
+                  )
+                )
+                  return kindMap.function;
+                if (
+                  /^(math|string|table|os|io|debug|package|utf8|bit32|typeof|type)$/.test(
+                    kw,
+                  )
+                )
+                  return kindMap.module;
+                if (/^[A-Z][A-Za-z0-9_]*$/.test(kw)) return kindMap.class;
+                if (/^(true|false|nil)$/.test(kw)) return kindMap.constant;
+                if (
+                  /^(local|end|do|then|if|else|elseif|for|while|repeat|until|break|return|continue|export|in|not|and|or)$/.test(
+                    kw,
+                  )
+                )
+                  return kindMap.keyword;
+                return kindMap.variable;
+              }
+
               const suggestions = luaGlobals.map((kw) => ({
                 label: kw,
-                kind: monaco.languages.CompletionItemKind.Keyword,
+                kind: getKind(kw),
                 insertText: kw,
                 range,
               }));
@@ -1306,7 +1263,8 @@ function createEditor(tabId, content) {
             automaticLayout: true,
             autoIndent: "full",
             formatOnType: true,
-            formatOnPaste: false,
+
+            contextmenu: false,
             lineNumbers: "on",
             tabSize: 2,
             insertSpaces: true,
@@ -1332,7 +1290,55 @@ function createEditor(tabId, content) {
             minimap: { enabled: false },
           });
 
+          monacoEditor.updateOptions({ stickyScroll: { enabled: false } });
+          monacoEditor.updateOptions({ contextmenu: false });
           monacoEditor.updateOptions({ cursorStyle: "line" });
+
+          monacoEditor.addCommand(
+            monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV,
+            () => {
+              (async () => {
+                try {
+                  let text = "";
+                  if (navigator.clipboard && navigator.clipboard.readText) {
+                    text = await navigator.clipboard.readText();
+                  } else if (
+                    typeof clipboard !== "undefined" &&
+                    clipboard.readText
+                  ) {
+                    text = clipboard.readText();
+                  }
+                  const selection = monacoEditor.getSelection();
+                  monacoEditor.executeEdits("paste", [
+                    { range: selection, text, forceMoveMarkers: true },
+                  ]);
+                  monacoEditor.focus();
+                } catch (e) {}
+              })();
+            },
+          );
+
+          editorWrapper.addEventListener("paste", (ev) => {
+            ev.preventDefault();
+            (async () => {
+              try {
+                let text = "";
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                  text = await navigator.clipboard.readText();
+                } else if (
+                  typeof clipboard !== "undefined" &&
+                  clipboard.readText
+                ) {
+                  text = clipboard.readText();
+                }
+                const selection = monacoEditor.getSelection();
+                monacoEditor.executeEdits("paste", [
+                  { range: selection, text, forceMoveMarkers: true },
+                ]);
+                monacoEditor.focus();
+              } catch (e) {}
+            })();
+          });
 
           editorAPI._editor = monacoEditor;
           editorAPI.getValue = () => monacoEditor.getValue();
@@ -1355,7 +1361,6 @@ function createEditor(tabId, content) {
                 if (monaco && monaco.editor && monaco.editor.remeasureFonts) {
                   monaco.editor.remeasureFonts();
                 }
-                monacoEditor.updateOptions({});
                 monacoEditor.layout();
               } catch (_) {}
             });
@@ -1380,39 +1385,6 @@ function createEditor(tabId, content) {
             monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP,
             () => {},
           );
-
-          if (!window._tritiumPasteHandlerAdded) {
-            window.addEventListener(
-              "keydown",
-              (e) => {
-                if (e.defaultPrevented) return;
-                const isPaste =
-                  (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v";
-                if (!isPaste) return;
-
-                const active = document.activeElement;
-                const isMonacoFocused =
-                  active &&
-                  active.classList &&
-                  active.classList.contains("inputarea");
-                if (!isMonacoFocused) return;
-                try {
-                  if (typeof require === "function") {
-                    const text = clipboard.readText();
-                    if (text && editorAPI._editor) {
-                      e.preventDefault();
-                      const sel = editorAPI._editor.getSelection();
-                      editorAPI._editor.executeEdits("paste", [
-                        { range: sel, text, forceMoveMarkers: true },
-                      ]);
-                    }
-                  }
-                } catch (_) {}
-              },
-              true,
-            );
-            window._tritiumPasteHandlerAdded = true;
-          }
 
           monacoEditor.onDidChangeModelContent(() => {});
         } catch (err) {
@@ -1562,7 +1534,7 @@ function showContextMenu(e, scriptName) {
   renameOption.innerHTML = '<i class="fas fa-edit"></i> Rename';
   renameOption.onclick = () => {
     renameScriptBtn.click();
-    contextMenu.style.display = "none";
+    contextMenu.classList.remove("open");
   };
 
   const deleteOption = document.createElement("div");
@@ -1570,7 +1542,7 @@ function showContextMenu(e, scriptName) {
   deleteOption.innerHTML = '<i class="fas fa-trash"></i> Delete';
   deleteOption.onclick = () => {
     deleteScriptBtn.click();
-    contextMenu.style.display = "none";
+    contextMenu.classList.remove("open");
   };
 
   const autoExecuteOption = document.createElement("div");
@@ -1578,16 +1550,16 @@ function showContextMenu(e, scriptName) {
   autoExecuteOption.innerHTML = '<i class="fas fa-bolt"></i>Auto Execute';
   autoExecuteOption.onclick = () => {
     autoExecuteScriptBtn.click();
-    contextMenu.style.display = "none";
+    contextMenu.classList.remove("open");
   };
 
   contextMenu.appendChild(renameOption);
   contextMenu.appendChild(deleteOption);
   contextMenu.appendChild(autoExecuteOption);
 
-  contextMenu.style.display = "block";
   contextMenu.style.left = `${e.pageX}px`;
   contextMenu.style.top = `${e.pageY}px`;
+  contextMenu.classList.add("open");
   updateAutoExecuteCheckbox(scriptName);
 }
 
@@ -1603,7 +1575,7 @@ function showWorkspaceContextMenu(e, workspaceId) {
   renameOption.innerHTML = '<i class="fas fa-edit"></i> Rename';
   renameOption.onclick = () => {
     renameWorkspace(workspaceId);
-    contextMenu.style.display = "none";
+    contextMenu.classList.remove("open");
   };
 
   const deleteOption = document.createElement("div");
@@ -1615,19 +1587,19 @@ function showWorkspaceContextMenu(e, workspaceId) {
     } else {
       showToast("Cannot delete the last workspace", true);
     }
-    contextMenu.style.display = "none";
+    contextMenu.classList.remove("open");
   };
 
   contextMenu.appendChild(renameOption);
   contextMenu.appendChild(deleteOption);
 
-  contextMenu.style.display = "block";
   contextMenu.style.left = `${e.pageX}px`;
   contextMenu.style.top = `${e.pageY}px`;
+  contextMenu.classList.add("open");
 }
 
 document.addEventListener("click", () => {
-  contextMenu.style.display = "none";
+  contextMenu.classList.remove("open");
   currentContextScript = null;
   currentContextWorkspace = null;
 });
@@ -1682,7 +1654,7 @@ renameScriptBtn.addEventListener("click", () => {
       input.blur();
     }
   });
-  contextMenu.style.display = "none";
+  contextMenu.classList.remove("open");
 });
 deleteScriptBtn.addEventListener("click", () => {
   if (!currentContextScript) return;
@@ -3364,6 +3336,49 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
   } catch (_) {}
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  const threshold = 12;
+
+  document.addEventListener("click", (e) => {
+    try {
+      const wsRect = workspaceSidebar.getBoundingClientRect();
+      const sbRect = sidebar.getBoundingClientRect();
+
+      if (
+        e.clientX >= wsRect.right - threshold &&
+        e.clientX <= wsRect.right + threshold
+      ) {
+        workspaceSidebar.classList.toggle("open");
+        workspaceSidebarOpen = workspaceSidebar.classList.contains("open");
+        try {
+          localStorage.setItem(
+            "workspaceSidebarOpen",
+            workspaceSidebarOpen ? "true" : "false",
+          );
+        } catch (_) {}
+        if (workspaceSidebarOpen) workspaceToggleBtn.classList.add("active");
+        else workspaceToggleBtn.classList.remove("active");
+        e.preventDefault();
+        return;
+      }
+
+      if (
+        e.clientX >= sbRect.left - threshold &&
+        e.clientX <= sbRect.left + threshold
+      ) {
+        sidebar.classList.toggle("open");
+        sidebarOpen = sidebar.classList.contains("open");
+        try {
+          localStorage.setItem("sidebarOpen", sidebarOpen ? "true" : "false");
+        } catch (_) {}
+        if (sidebarOpen) renderSidebar();
+        e.preventDefault();
+        return;
+      }
+    } catch (err) {}
+  });
 });
 
 window.addEventListener("DOMContentLoaded", () => {

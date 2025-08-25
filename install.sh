@@ -1,15 +1,9 @@
 #!/bin/bash
-
-if [ "$(uname)" != "Darwin" ]; then
-  echo "This script is intended for macOS only."
-  exit 1
-fi
-
 architecture=$(uname -m)
 if [[ "$architecture" == "arm64" ]]; then
-  url="https://github.com/Phantom8015/Tritium/releases/download/v4.1.0/Tritium-4.1.0-arm64-mac.zip"
+  url="https://github.com/Phantom8015/Tritium/releases/download/v4.1.1/Tritium-4.1.1-arm64-mac.zip"
 elif [[ "$architecture" == "x86_64" ]]; then
-  url="https://github.com/Phantom8015/Tritium/releases/download/v4.1.0/Tritium-4.1.0-mac.zip"
+  url="https://github.com/Phantom8015/Tritium/releases/download/v4.1.1/Tritium-4.1.1-mac.zip"
 else
   echo "Unsupported architecture: $architecture"
   exit 1
@@ -23,12 +17,12 @@ if [ -d "/Applications/Tritium.app" ]; then
 else
   echo "Tritium is not installed. Proceeding with installation."
 fi
-
+clear
 echo "Downloading Tritium for $architecture..."
 curl -L -o "/tmp/Tritium/Tritium.zip" "$url"
 echo "Extracting Tritium..."
 unzip -o "/tmp/Tritium/Tritium.zip" -d "/tmp/Tritium"
 mv -f "/tmp/Tritium/Tritium.app" "/Applications"
 rm -rf "/tmp/Tritium"
-
+clear
 echo "Tritium has been successfully installed! Please restart the app if it was running during installation."
