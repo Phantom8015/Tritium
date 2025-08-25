@@ -1268,77 +1268,6 @@ footer .console-btn {
   background: rgba(0, 0, 0, 0.5);
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
 }
-.prompter textarea {
-  width: calc(100% - 24px);
-  height: 20px;
-  resize: none;
-  background: rgba(20, 20, 20, 0.4);
-  color: #e0e0e0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 12px;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
-  margin-bottom: 0;
-  transition: border 0.2s;
-  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
-}
-.prompter textarea:focus {
-  outline: none;
-  border: 1px solid var(--accent-color);
-  filter: drop-shadow(0 0 8px var(--accent-color));
-}
-.prompter-buttons {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  font-size: 14px;
-  gap: 5px;
-}
-.prompter-button {
-  height: 44px;
-  padding: 0 16px;
-  margin: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
-}
-.generate-btn {
-  background: var(--accent-color);
-  color: #000;
-  filter: drop-shadow(0 0 8px var(--accent-color));
-}
-.generate-btn:hover {
-  filter: drop-shadow(0 0 15px var(--accent-color));
-  transform: translateY(-1px);
-}
-.cancel-btn {
-  background: rgba(20, 20, 20, 0.6);
-  color: #e0e0e0;
-}
-.cancel-btn:hover {
-  background: rgba(80, 80, 80, 0.6);
-  color: #fff;
-}
-.prompter.loading .generate-btn {
-  pointer-events: none;
-  opacity: 0.7;
-}
-.prompter.loading .generate-btn::after {
-  content: "";
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-left: 8px;
-  border: 2px solid transparent;
-  border-top-color: #000;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1454,39 +1383,61 @@ footer .console-btn {
 .port-dropdown-toggle {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(28, 28, 28, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #e0e0e0;
-  padding: 4px 10px;
-  font-size: 12px;
-  border-radius: 8px;
+  gap: 8px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e8eef8;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 10px;
   cursor: pointer;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
 }
 .port-dropdown-toggle:focus {
   outline: none;
-  border-color: var(--accent-color);
-  filter: drop-shadow(0 0 6px var(--accent-color));
+  border-color: rgba(var(--accent-rgb, 127, 180, 255), 0.9);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.55),
+    0 0 8px rgba(var(--accent-rgb, 127, 180, 255), 0.12);
+}
+.port-select.disabled,
+.port-dropdown-toggle.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(0.6);
 }
 .port-dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 8px);
   right: 0;
-  background: rgba(20, 20, 20, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  min-width: 110px;
-  padding: 6px 0;
+  background: rgba(65, 65, 65, 0.2);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  min-width: 140px;
+  padding: 6px 6px;
   display: none;
-  max-height: 220px;
+  max-height: 300px;
   overflow-y: auto;
   overscroll-behavior: contain;
   z-index: 5000;
   box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 .port-dropdown.open .port-dropdown-menu {
   display: block;
@@ -1503,23 +1454,26 @@ footer .console-btn {
   }
 }
 .port-option {
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  color: #e0e0e0;
+  gap: 10px;
+  color: #e6eef8;
   transition:
-    background 0.15s,
-    color 0.15s;
+    background 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  border-radius: 8px;
 }
 .port-option:hover,
 .port-option[aria-selected="true"] {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 .port-option-status {
   width: 8px;

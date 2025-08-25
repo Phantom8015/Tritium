@@ -8,6 +8,35 @@ if (isElectron) {
     console.warn("Failed to load electron modules:", error);
   }
 }
+
+function updatePortUIState() {
+  if (!executorSelect) return;
+  const isHydro = executorSelect.value === "Hydrogen";
+  if (portSelect) {
+    portSelect.disabled = isHydro;
+    portSelect.classList.toggle("disabled", !!isHydro);
+    try {
+      portSelect.setAttribute("aria-hidden", isHydro ? "true" : "false");
+    } catch (e) {}
+  }
+  if (portDropdownToggle) {
+    portDropdownToggle.classList.toggle("disabled", !!isHydro);
+    try {
+      portDropdownToggle.disabled = !!isHydro;
+    } catch (e) {}
+    try {
+      portDropdownToggle.setAttribute(
+        "aria-disabled",
+        !!isHydro ? "true" : "false",
+      );
+    } catch (e) {}
+  }
+  if (portDropdown) {
+    try {
+      portDropdown.classList.toggle("disabled", !!isHydro);
+    } catch (e) {}
+  }
+}
 const tabs = document.getElementById("tabs");
 const editorContainer = document.getElementById("editor-container");
 const scriptsList = document.getElementById("scripts");
@@ -53,6 +82,7 @@ const vibrancyOpacityInput = document.getElementById("vibrancyOpacity");
 const vibrancyOpacityValue = document.getElementById("vibrancyOpacityValue");
 const vibrancyOpacityGroup = document.getElementById("vibrancyOpacityGroup");
 const scriptHubSelect = document.getElementById("scriptHub");
+const executorSelect = document.getElementById("executorSelect");
 const discordBtn = document.getElementById("discord-button");
 const discordDialog = document.getElementById("discordDialog");
 const joinDiscordBtn = document.getElementById("joinDiscord");
@@ -64,8 +94,8 @@ const portDropdown = document.getElementById("portDropdown");
 const portDropdownToggle = document.getElementById("portDropdownToggle");
 const portDropdownMenu = document.getElementById("portDropdownMenu");
 const portDropdownLabel = document.getElementById("portDropdownLabel");
-const PORT_START = 5553;
-const PORT_END = 5563;
+let PORT_START = 5553;
+let PORT_END = 5563;
 let selectedPort = null;
 let lastPortStatus = null;
 let portPingCooldown = 0;
@@ -73,13 +103,13 @@ let lastAllPortsPingTime = 0;
 
 function initPortSelector() {
   if (!portSelect) return;
-  if (portSelect.options.length === 0) {
-    for (let p = PORT_START; p <= PORT_END; p++) {
-      const opt = document.createElement("option");
-      opt.value = p;
-      opt.textContent = p;
-      portSelect.appendChild(opt);
-    }
+
+  portSelect.innerHTML = "";
+  for (let p = PORT_START; p <= PORT_END; p++) {
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p;
+    portSelect.appendChild(opt);
   }
   const saved = getLocalStorage("selectedPort", PORT_START);
   if (saved >= PORT_START && saved <= PORT_END) {
@@ -98,6 +128,18 @@ function initPortSelector() {
   });
   setTimeout(() => queuePortStatusCheck(true), 1200);
   buildCustomDropdown();
+}
+
+function setPortRange(start, end) {
+  PORT_START = start;
+  PORT_END = end;
+
+  const saved = getLocalStorage("selectedPort", PORT_START);
+  if (saved < PORT_START || saved > PORT_END) {
+    setLocalStorage("selectedPort", PORT_START);
+  }
+  initPortSelector();
+  queuePortStatusCheck(true);
 }
 
 function updatePortStatusVisual(state) {
@@ -375,13 +417,97 @@ function pingAllPorts() {
   }
 }
 
+function pingAllExecutors() {
+  const msStart = 5553,
+    msEnd = 5563;
+  const opStart = 8392,
+    opEnd = 8397;
+  const hydroStart = 6969,
+    hydroEnd = 6969;
+
+  for (let p = msStart; p <= msEnd; p++) {
+    const b = document.getElementById(`port-status-${p}`);
+    if (b) b.classList.remove("online", "offline");
+  }
+  for (let p = opStart; p <= opEnd; p++) {
+    const b = document.getElementById(`port-status-${p}`);
+    if (b) b.classList.remove("online", "offline");
+  }
+
+  for (let p = msStart; p <= msEnd; p++) pingPort(p);
+  for (let p = opStart; p <= opEnd; p++) pingPort(p);
+  for (let p = hydroStart; p <= hydroEnd; p++) pingPort(p);
+
+  setTimeout(() => {
+    checkSingleOnlineAcrossExecutors(msStart, msEnd, opStart, opEnd);
+  }, 1000);
+}
+
+function checkSingleOnlineAcrossExecutors(msStart, msEnd, opStart, opEnd) {
+  const online = [];
+  for (let p = msStart; p <= msEnd; p++) {
+    if (portStatusCache[p] === "online") online.push(p);
+  }
+  for (let p = opStart; p <= opEnd; p++) {
+    if (portStatusCache[p] === "online") online.push(p);
+  }
+  for (let p = hydroStart; p <= hydroEnd; p++) {
+    if (portStatusCache[p] === "online") online.push(p);
+  }
+
+  if (online.length === 1) {
+    const port = online[0];
+    const isOpium = port >= opStart && port <= opEnd;
+    const isHydro = port >= hydroStart && port <= hydroEnd;
+
+    if (executorSelect) {
+      const desiredExec = isOpium
+        ? "Opiumware"
+        : isHydro
+          ? "Hydrogen"
+          : "MacSploit";
+      if (executorSelect.value !== desiredExec) {
+        executorSelect.value = desiredExec;
+        try {
+          localStorage.setItem("executorType", desiredExec);
+        } catch (e) {}
+        if (isElectron && ipcRenderer) {
+          try {
+            ipcRenderer.invoke("set-executor", desiredExec).catch(() => {});
+          } catch (e) {}
+        }
+        try {
+          updatePortUIState();
+        } catch (e) {}
+      }
+    }
+
+    if (isOpium) setPortRange(opStart, opEnd);
+    else setPortRange(msStart, msEnd);
+
+    try {
+      updatePortUIState();
+    } catch (e) {}
+
+    if (selectedPort !== port) {
+      selectedPort = port;
+      if (portSelect) portSelect.value = port;
+      try {
+        setLocalStorage("selectedPort", port);
+      } catch (e) {}
+      if (portDropdownLabel) portDropdownLabel.textContent = port;
+    }
+  }
+}
+
 function queuePortStatusCheck(force = false) {
   if (typeof require !== "function") return;
   const now = Date.now();
 
   if (!force && now - lastAllPortsPingTime < 2500) return;
   lastAllPortsPingTime = now;
-  pingAllPorts();
+  if (force) pingAllExecutors();
+  else pingAllPorts();
 }
 
 if (isElectron && ipcRenderer) {
@@ -1477,11 +1603,22 @@ function persistSavedScripts() {
 }
 function loadAutoExecuteScripts() {
   let autoexecuteScriptse = getLocalStorage("autoExecuteScripts", []);
-  const autoexecDir = path.join(
-    require("os").homedir() + "/Documents/MacSploit Automatic Execution",
-  );
-  if (!fs.existsSync(autoexecDir)) {
-    fs.mkdirSync(autoexecDir, { recursive: true });
+
+  const homedir = require("os").homedir();
+  const possibleDirs = [
+    path.join(homedir, "Documents", "MacSploit Automatic Execution"),
+    path.join(homedir, "Opiumware", "autoexec"),
+    path.join(homedir, "Hydrogen", "autoexecute"),
+  ];
+
+  const targetDirs = possibleDirs.filter((d) => fs.existsSync(d));
+
+  if (targetDirs.length === 0) {
+    const def = possibleDirs[0];
+    try {
+      fs.mkdirSync(def, { recursive: true });
+      targetDirs.push(def);
+    } catch (e) {}
   }
   let combinedScriptContent = "";
   console.log("Auto execute scripts:", autoexecuteScriptse);
@@ -1492,8 +1629,15 @@ function loadAutoExecuteScripts() {
       combinedScriptContent += script.script + "\n\n";
     }
   });
-  const filePath = path.join(autoexecDir, `autoexecute.txt`);
-  fs.writeFileSync(filePath, combinedScriptContent);
+
+  targetDirs.forEach((dir) => {
+    try {
+      const filePath = path.join(dir, `autoexecute.txt`);
+      fs.writeFileSync(filePath, combinedScriptContent);
+    } catch (e) {
+      console.error("Failed to write autoexecute to", dir, e);
+    }
+  });
 
   return getLocalStorage("autoExecuteScripts", []);
 }
@@ -2511,6 +2655,7 @@ function getSettings() {
       10,
     ),
     scriptHub: localStorage.getItem("scriptHub") || "both",
+    executor: localStorage.getItem("executorType") || "MacSploit",
   };
 }
 
@@ -2545,6 +2690,50 @@ function applySettings() {
   if (scriptHubSelect) {
     scriptHubSelect.value = scriptHub;
   }
+  if (executorSelect) {
+    if (isElectron && ipcRenderer) {
+      try {
+        ipcRenderer.invoke("get-executor").then((val) => {
+          if (val) executorSelect.value = val;
+
+          if (val === "Opiumware") setPortRange(8392, 8397);
+          else if (val === "Hydrogen") setPortRange(6969, 6969);
+          else setPortRange(5553, 5563);
+          try {
+            localStorage.setItem("executorType", val);
+          } catch (e) {}
+          try {
+            updatePortUIState();
+          } catch (e) {}
+        });
+      } catch (e) {
+        executorSelect.value = executor;
+        if (executor === "Opiumware") setPortRange(8392, 8397);
+        else if (executor === "Hydrogen") setPortRange(6969, 6969);
+        else setPortRange(5553, 5563);
+        try {
+          updatePortUIState();
+        } catch (err) {}
+      }
+    } else {
+      executorSelect.value = executor;
+      if (executor === "Opiumware") setPortRange(8392, 8397);
+      else if (executor === "Hydrogen") setPortRange(6969, 6969);
+      else setPortRange(5553, 5563);
+      try {
+        updatePortUIState();
+      } catch (err) {}
+    }
+  }
+
+  const msBtn = document.getElementById("updateMacSploit");
+  if (msBtn) {
+    if (executorSelect && executorSelect.value !== "MacSploit") {
+      msBtn.style.display = "none";
+    } else {
+      msBtn.style.display = "";
+    }
+  }
 }
 
 function saveSettings() {
@@ -2556,6 +2745,16 @@ function saveSettings() {
   }
   if (scriptHubSelect) {
     localStorage.setItem("scriptHub", scriptHubSelect.value);
+  }
+  if (executorSelect) {
+    localStorage.setItem("executorType", executorSelect.value);
+    if (isElectron && ipcRenderer) {
+      try {
+        ipcRenderer
+          .invoke("set-executor", executorSelect.value)
+          .catch(() => {});
+      } catch (e) {}
+    }
   }
   applySettings();
 }
@@ -2629,6 +2828,33 @@ if (scriptHubSelect) {
     }
   });
 }
+
+if (executorSelect) {
+  executorSelect.addEventListener("change", () => {
+    try {
+      localStorage.setItem("executorType", executorSelect.value);
+    } catch (e) {}
+    if (isElectron && ipcRenderer) {
+      try {
+        ipcRenderer
+          .invoke("set-executor", executorSelect.value)
+          .catch(() => {});
+      } catch (e) {}
+    }
+
+    if (executorSelect.value === "Opiumware") {
+      setPortRange(8392, 8397);
+    } else if (executorSelect.value === "Hydrogen") {
+      setPortRange(6969, 6969);
+    } else {
+      setPortRange(5553, 5563);
+    }
+    updatePortUIState();
+    saveSettings();
+  });
+}
+
+updatePortUIState();
 
 resetColorBtn.addEventListener("click", () => {
   localStorage.setItem("accentColor", "#7FB4FF");

@@ -1,5 +1,5 @@
 # Tritium
-A custom MacSploit UI made in Electron
+A custom Roblox Executor UI made in Electron
 
 ## Features
 - Script hub
@@ -9,9 +9,9 @@ A custom MacSploit UI made in Electron
 - Roblox console
 - Workspaces
 - Customizable colors
-- Hydrogen updator
-- AI script generator
+- Multiple Executors (Hydrogen, Opiumware, MacSploit)
 - Spotlight-execution
+
 
 ## Installation
 

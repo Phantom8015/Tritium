@@ -18,6 +18,7 @@ const { exec } = require("child_process");
 const START_PORT = 5553;
 const END_PORT = 5563;
 const net = require("net");
+const zlib = require("zlib");
 let mainWindow = null;
 let serverPort = null;
 let lastError = null;
@@ -529,6 +530,60 @@ ipcMain.on("set-spvibrancy", (event, enableVibrancy) => {
   applyDarkVibrancy(_vibrancyEnabledMain, _vibrancyEnabledSpotlight);
 });
 
+const EXECUTOR_KEY = "executorType";
+if (!localStorage.getItem(EXECUTOR_KEY)) {
+  localStorage.setItem(EXECUTOR_KEY, "MacSploit");
+}
+
+const executorConfigPath = path.join(app.getPath("userData"), "executor.json");
+
+function readExecutorFromFile() {
+  try {
+    if (fs.existsSync(executorConfigPath)) {
+      const raw = fs.readFileSync(executorConfigPath, "utf8");
+      const obj = JSON.parse(raw);
+      if (obj && obj.executor) return obj.executor;
+    }
+  } catch (e) {
+    console.warn("Failed to read executor config:", e.message);
+  }
+  return null;
+}
+
+function writeExecutorToFile(value) {
+  try {
+    fs.writeFileSync(
+      executorConfigPath,
+      JSON.stringify({ executor: value }),
+      "utf8",
+    );
+  } catch (e) {
+    console.warn("Failed to write executor config:", e.message);
+  }
+}
+
+let _executorType =
+  readExecutorFromFile() || localStorage.getItem(EXECUTOR_KEY) || "MacSploit";
+
+ipcMain.handle("get-executor", async () => {
+  return _executorType || "MacSploit";
+});
+
+ipcMain.handle("set-executor", async (event, value) => {
+  if (value !== "MacSploit" && value !== "Opiumware" && value !== "Hydrogen") {
+    throw new Error("Invalid executor");
+  }
+  _executorType = value;
+  try {
+    localStorage.setItem(EXECUTOR_KEY, value);
+  } catch (e) {}
+
+  try {
+    writeExecutorToFile(value);
+  } catch (e) {}
+  return { success: true };
+});
+
 ipcMain.on("vibrancy-opacity-changed", (event, value) => {
   try {
     if (spotlightWindow && !spotlightWindow.isDestroyed()) {
@@ -551,42 +606,122 @@ ipcMain.on("set-spotlight-size", (event, size) => {
 });
 
 async function ligma(scriptContent) {
-  for (let port = START_PORT; port <= END_PORT; port++) {
-    try {
-      await new Promise((resolve, reject) => {
-        const socket = net.createConnection({ host: "127.0.0.1", port }, () => {
-          serverPort = port;
-          socket.destroy();
-          resolve();
+  const executor = _executorType || "MacSploit";
+
+  if (executor === "MacSploit") {
+    for (let port = START_PORT; port <= END_PORT; port++) {
+      try {
+        await new Promise((resolve, reject) => {
+          const socket = net.createConnection(
+            { host: "127.0.0.1", port },
+            () => {
+              serverPort = port;
+              socket.destroy();
+              resolve();
+            },
+          );
+          socket.on("error", reject);
+          socket.setTimeout(500, () => reject(new Error("Timeout")));
         });
-        socket.on("error", reject);
-        socket.setTimeout(500, () => reject(new Error("Timeout")));
+        if (serverPort) break;
+      } catch (err) {
+        lastError = err.message;
+      }
+    }
+
+    if (!serverPort) {
+      throw new Error(
+        `Could not locate TCP server on ports ${START_PORT}-${END_PORT}. Last error: ${lastError}`,
+      );
+    }
+
+    console.log(`✅ Server found on port ${serverPort}`);
+    console.log(scriptContent);
+    const header = Buffer.alloc(16, 0);
+    header.writeUInt32LE(Buffer.byteLength(scriptContent) + 1, 8);
+    net
+      .createConnection(serverPort, "127.0.0.1")
+      .on("connect", function () {
+        this.write(
+          Buffer.concat([header, Buffer.from(scriptContent), Buffer.from([0])]),
+        );
+        this.end();
+      })
+      .setTimeout(3000);
+    return;
+  }
+
+  if (executor === "Opiumware") {
+    const Ports = [8392, 8393, 8394, 8395, 8396, 8397];
+    let ConnectedPort = null;
+    let Stream = null;
+
+    for (const P of Ports) {
+      try {
+        Stream = await new Promise((Resolve, Reject) => {
+          const Socket = net.createConnection(
+            { host: "127.0.0.1", port: P },
+            () => Resolve(Socket),
+          );
+          Socket.on("error", Reject);
+          Socket.setTimeout(1000, () => Reject(new Error("Timeout")));
+        });
+        console.log(`Successfully connected to Opiumware on port: ${P}`);
+        ConnectedPort = P;
+        break;
+      } catch (Err) {
+        console.log(`Failed to connect to port ${P}: ${Err.message}`);
+      }
+    }
+
+    if (!Stream) throw new Error("Failed to connect on Opiumware ports");
+
+    if (scriptContent !== "NULL") {
+      try {
+        scriptContent = "OpiumwareScript " + scriptContent;
+        await new Promise((Resolve, Reject) => {
+          zlib.deflate(
+            Buffer.from(scriptContent, "utf8"),
+            (Err, Compressed) => {
+              if (Err) return Reject(Err);
+              Stream.write(Compressed, (WriteErr) => {
+                if (WriteErr) return Reject(WriteErr);
+                console.log(`Script sent (${Compressed.length} bytes)`);
+                Resolve();
+              });
+            },
+          );
+        });
+      } catch (Err) {
+        Stream.destroy();
+        throw new Error(`Error sending script: ${Err.message}`);
+      }
+    }
+
+    Stream.end();
+    return `Successfully connected to Opiumware on port: ${ConnectedPort}`;
+  }
+
+  if (executor === "Hydrogen") {
+    const HYDRO_PORT = 6969;
+    const url = `http://127.0.0.1:${HYDRO_PORT}/execute`;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: String(scriptContent || ""),
+        timeout: 5000,
       });
-      if (serverPort) break;
+
+      const text = await res.text().catch(() => "");
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+      return { status: "success", port: HYDRO_PORT, response: text };
     } catch (err) {
-      lastError = err.message;
+      throw new Error(`Hydrogen HTTP send failed: ${err.message}`);
     }
   }
-
-  if (!serverPort) {
-    throw new Error(
-      `Could not locate TCP server on ports ${START_PORT}-${END_PORT}. Last error: ${lastError}`,
-    );
-  }
-
-  console.log(`✅ Server found on port ${serverPort}`);
-  console.log(scriptContent);
-  const header = Buffer.alloc(16, 0);
-  header.writeUInt32LE(Buffer.byteLength(scriptContent) + 1, 8);
-  net
-    .createConnection(serverPort, "127.0.0.1")
-    .on("connect", function () {
-      this.write(
-        Buffer.concat([header, Buffer.from(scriptContent), Buffer.from([0])]),
-      );
-      this.end();
-    })
-    .setTimeout(3000);
 }
 
 function processData(data) {
